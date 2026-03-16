@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Road Runners Auto Detailing — Ceramic Coating & Car Detailing, Avadi Chennai</title>
+  <meta name="description" content="Chennai's most trusted car detailing & ceramic coating specialists. IDA & IDAA certified. 4.9★ rated. Located in Avadi, Chennai.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230a0a0a'/><text x='50%25' y='54%25' dominant-baseline='central' text-anchor='middle' font-family='serif' font-weight='900' font-size='14' fill='%23d4a017'>RR</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── RESET & ROOT ─────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    :root {
+      --bg:         #0a0a0a;
+      --bg-card:    #111111;
+      --bg-float:   #181818;
+      --border:     #1e1e1e;
+      --border-mid: #2a2a2a;
+      --gold:       #d4a017;
+      --gold-bright:#f0b429;
+      --gold-glow:  rgba(212,160,23,0.10);
+      --text:       #f0f0ea;
+      --muted:      #888888;
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+      --nav-h:      72px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      line-height: 1.7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── SCROLLBAR ────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+    /* ── GLOBAL TYPOGRAPHY ────────────────────── */
+    h1, h2, h3, h4 { font-family: 'Montserrat', sans-serif; color: var(--text); }
+    p { color: var(--muted); line-height: 1.8; font-size: 0.925rem; }
+    a { text-decoration: none; color: inherit; }
+    img { display: block; width: 100%; }
+
+    /* ── LAYOUT ───────────────────────────────── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+    .section-pad { padding: 6rem 0; }
+
+    /* ── GRID TEXTURE ─────────────────────────── */
+    .g-tex {
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ── SECTION LABELS ───────────────────────── */
+    .section-label {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+
+    .section-h {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    /* ── SCROLL REVEAL ────────────────────────── */
+    .rv {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.9s var(--ease-spring), transform 0.9s var(--ease-spring);
+    }
+    .rv.on { opacity: 1; transform: translateY(0); }
+    .rv.d1 { transition-delay: 0.1s; }
+    .rv.d2 { transition-delay: 0.2s; }
+    .rv.d3 { transition-delay: 0.3s; }
+    .rv.d4 { transition-delay: 0.4s; }
+
+    /* ── HERO LOAD ANIMATIONS ─────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -400% center; }
+      100% { background-position:  400% center; }
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);   opacity: 0.6; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    .au1 { opacity: 0; animation: fadeUp 0.9s var(--ease-spring) 0.05s forwards; }
+    .au2 { opacity: 0; animation: fadeUp 0.9s var(--ease-spring) 0.20s forwards; }
+    .au3 { opacity: 0; animation: fadeUp 0.9s var(--ease-spring) 0.35s forwards; }
+    .au4 { opacity: 0; animation: fadeUp 0.9s var(--ease-spring) 0.50s forwards; }
+
+    /* ── CORNER BRACKETS ──────────────────────── */
+    .c-tl, .c-br { position: absolute; width: 16px; height: 16px; opacity: 0; transition: opacity 0.3s ease; }
+    .c-tl { top: 12px; left: 12px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+    .c-br { bottom: 12px; right: 12px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+
+    /* ── BUTTONS ──────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 28px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: 3px;
+      cursor: pointer;
+      border: none;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s var(--ease-spring), opacity 0.25s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #0a0a0a;
+    }
+    .btn-gold:hover { background: var(--gold-bright); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border-mid);
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── NAVBAR ───────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      height: var(--nav-h);
+      background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0) 100%);
+      border-bottom: 1px solid transparent;
+      transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+    }
+    nav.scrolled {
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom-color: var(--border);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .logo-rr {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+    .logo-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+    .nav-link {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(240,240,234,0.85);
+      transition: color 0.2s ease;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    .nav-link:hover { color: var(--gold); }
+
+    .ham {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .ham span {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      background: var(--text);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .ham.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .ham.open span:nth-child(2) { opacity: 0; }
+    .ham.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      top: var(--nav-h);
+      left: 0; right: 0;
+      background: rgba(10,10,10,0.97);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      flex-direction: column;
+      gap: 1.25rem;
+      transform: translateY(-8px);
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s var(--ease-spring);
+      z-index: 999;
+    }
+    .mobile-nav.open {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .mobile-nav .nav-link { font-size: 0.85rem; color: var(--text); }
+
+    /* ── HERO ─────────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      background: #050505;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1619405399517-d7fce0f13302?w=1800&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center 40%;
+      opacity: 0.45;
+      animation: fadeIn 1.5s ease 0.1s both;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.5) 50%, rgba(10,10,10,0.3) 100%),
+        radial-gradient(ellipse 700px 500px at 10% 90%, rgba(212,160,23,0.08) 0%, transparent 65%);
+    }
+    /* Noise overlay */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 2;
+    }
+    /* Speed lines */
+    .hero-lines {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .hero-lines::before,
+    .hero-lines::after {
+      content: '';
+      position: absolute;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, rgba(212,160,23,0.2), transparent);
+    }
+    .hero-lines::before {
+      height: 60%;
+      right: 22%;
+      top: 20%;
+      transform: rotate(-12deg);
+    }
+    .hero-lines::after {
+      height: 40%;
+      right: 28%;
+      top: 30%;
+      transform: rotate(-12deg);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      padding: var(--nav-h) 2rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding-top: calc(var(--nav-h) + 5rem);
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.75rem;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+    .hero-h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(3.5rem, 9vw, 7.5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 0.92;
+      margin-bottom: 2rem;
+    }
+    .hero-line1 { display: block; color: var(--text); }
+    .hero-line2 {
+      display: block;
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(212,160,23,0.7);
+    }
+    .hero-sub {
+      max-width: 520px;
+      font-size: 0.975rem;
+      color: #aaa;
+      line-height: 1.75;
+      margin-bottom: 2.5rem;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* ── TRUST BAR ────────────────────────────── */
+    .trust-bar {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+      overflow: hidden;
+    }
+    .trust-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: stretch;
+    }
+    .trust-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.4rem 1rem;
+      gap: 3px;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+    .trust-item:last-child { border-right: none; }
+    .trust-val {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--gold-bright);
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .trust-val svg { width: 16px; height: 16px; fill: var(--gold-bright); }
+    .trust-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── SERVICES ─────────────────────────────── */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 3.5rem;
+    }
+    .svc {
+      background: var(--bg-card);
+      padding: 2.25rem 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease;
+    }
+    .svc:hover { background: var(--bg-float); }
+    .svc:hover .c-tl, .svc:hover .c-br { opacity: 1; }
+
+    .svc-flagship {
+      border-left: 2px solid var(--gold);
+    }
+    .svc-flagship::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(212,160,23,0.06), transparent);
+      background-size: 400% auto;
+      animation: shimmer 4s linear infinite;
+      pointer-events: none;
+    }
+
+    .svc-badge {
+      display: inline-block;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #0a0a0a;
+      background: var(--gold);
+      padding: 3px 10px;
+      border-radius: 2px;
+      margin-bottom: 1.25rem;
+    }
+
+    .svc-icon {
+      width: 36px;
+      height: 36px;
+      color: var(--gold);
+      margin-bottom: 1.1rem;
+    }
+    .svc-icon svg { width: 100%; height: 100%; }
+
+    .svc-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+    .svc-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+    .svc-link {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      transition: color 0.2s ease;
+    }
+    .svc-link:hover { color: var(--gold-bright); }
+
+    /* ── ABOUT ────────────────────────────────── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+    .about-img-wrap {
+      position: relative;
+    }
+    .about-img {
+      width: 100%;
+      height: 520px;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(20%);
+    }
+    .about-img-accent {
+      position: absolute;
+      top: -14px;
+      left: -14px;
+      width: 60px;
+      height: 60px;
+      border-top: 2px solid var(--gold);
+      border-left: 2px solid var(--gold);
+      pointer-events: none;
+    }
+    .about-img-accent-br {
+      position: absolute;
+      bottom: -14px;
+      right: -14px;
+      width: 60px;
+      height: 60px;
+      border-bottom: 2px solid var(--gold);
+      border-right: 2px solid var(--gold);
+      pointer-events: none;
+    }
+    .cert-float {
+      position: absolute;
+      bottom: 24px;
+      left: -24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-mid);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cert-float-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--gold-glow);
+      border: 1px solid rgba(212,160,23,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 1rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    .cert-float-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1.2;
+    }
+    .cert-float-sub {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .about-copy .section-label { display: block; }
+    .about-copy .section-h { margin-bottom: 1.5rem; }
+    .about-copy p { margin-bottom: 1.25rem; }
+
+    .cert-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 2rem;
+    }
+    .cert-pill {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      border: 1px solid rgba(212,160,23,0.35);
+      padding: 6px 14px;
+      border-radius: 2px;
+    }
+
+    /* ── GALLERY ──────────────────────────────── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 220px;
+      gap: 3px;
+      margin-top: 3.5rem;
+      grid-template-areas:
+        "a b c"
+        "a d e"
+        ". d .";
+    }
+    .gallery-grid .g-item:nth-child(1) { grid-area: a; }
+    .gallery-grid .g-item:nth-child(2) { grid-area: b; }
+    .gallery-grid .g-item:nth-child(3) { grid-area: c; }
+    .gallery-grid .g-item:nth-child(4) { grid-area: d; }
+    .gallery-grid .g-item:nth-child(5) { grid-area: e; }
+    .g-item {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+    .g-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s var(--ease-spring);
+    }
+    .g-item:hover img { transform: scale(1.06); }
+    .g-item.g-tall { grid-row: span 2; }
+
+    .g-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,10,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .g-item:hover .g-overlay { opacity: 1; }
+    .g-overlay p {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* ── TESTIMONIALS ─────────────────────────── */
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 3.5rem;
+    }
+    .testi {
+      background: var(--bg-card);
+      padding: 2.25rem 2rem;
+      transition: background 0.3s ease;
+    }
+    .testi:hover { background: var(--bg-float); }
+    .testi-stars {
+      font-size: 0.85rem;
+      color: var(--gold-bright);
+      letter-spacing: 2px;
+      margin-bottom: 1.25rem;
+    }
+    .testi-text {
+      font-size: 0.9rem;
+      color: #bbb;
+      line-height: 1.8;
+      font-style: italic;
+      margin-bottom: 1.75rem;
+    }
+    .testi-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .testi-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--gold-glow);
+      border: 1px solid rgba(212,160,23,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .testi-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .testi-meta {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+    }
+
+    /* ── WHY CHOOSE US ────────────────────────── */
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 3.5rem;
+    }
+    .why-card {
+      background: var(--bg-card);
+      padding: 3rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s ease;
+    }
+    .why-card:hover { background: var(--bg-float); }
+    .why-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+    }
+    .why-icon svg { width: 100%; height: 100%; }
+    .why-card h3 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+    }
+    .why-card p { font-size: 0.875rem; color: var(--muted); }
+
+    /* ── CONTACT ──────────────────────────────── */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 4rem;
+      align-items: start;
+      margin-top: 3.5rem;
+    }
+    .contact-block { margin-bottom: 1.75rem; }
+    .contact-block-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.4rem;
+    }
+    .contact-block p { color: #bbb; font-size: 0.9rem; }
+
+    .hours-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .hours-table td {
+      padding: 5px 0;
+      font-size: 0.875rem;
+      color: #bbb;
+    }
+    .hours-table td:first-child { color: var(--muted); padding-right: 2rem; }
+
+    .insta-link {
+      font-size: 0.875rem;
+      color: var(--gold);
+      transition: color 0.2s ease;
+    }
+    .insta-link:hover { color: var(--gold-bright); }
+
+    .map-wrap {
+      border: 1px solid var(--border-mid);
+      overflow: hidden;
+    }
+    .map-wrap iframe {
+      display: block;
+      width: 100%;
+      height: 420px;
+      border: 0;
+      filter: invert(90%) hue-rotate(180deg) saturate(0.8);
+    }
+
+    /* ── FOOTER ───────────────────────────────── */
+    footer {
+      border-top: 1px solid rgba(212,160,23,0.12);
+      padding: 3rem 0;
+    }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+    .footer-logo {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: var(--text);
+    }
+    .footer-tagline {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-top: 3px;
+    }
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+    .f-link {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color 0.2s ease;
+    }
+    .f-link:hover { color: var(--text); }
+    .footer-right { text-align: right; }
+    .footer-copy {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── FLOATING WHATSAPP ────────────────────── */
+    .wa-float {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 900;
+      width: 54px;
+      height: 54px;
+      background: #25D366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(37,211,102,0.35);
+      transition: transform 0.25s var(--ease-spring);
+    }
+    .wa-float:hover { transform: scale(1.1); }
+    .wa-float svg { width: 28px; height: 28px; fill: #fff; }
+    .wa-float::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: #25D366;
+      animation: pulse-ring 2s ease-out infinite;
+      z-index: -1;
+    }
+
+    /* ── RESPONSIVE ───────────────────────────── */
+
+    /* Tablet landscape (≤1024px) */
+    @media (max-width: 1024px) {
+      .about-grid { gap: 3rem; }
+      .contact-grid { gap: 2.5rem; }
+      .section-h { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
+    }
+
+    /* Tablet portrait (≤900px) */
+    @media (max-width: 900px) {
+      /* Nav */
+      .nav-links { display: none; }
+      .ham { display: flex; }
+      .nav-book-btn { display: none; }
+
+      /* Trust bar — wrap into 3+2 */
+      .trust-inner { flex-wrap: wrap; }
+      .trust-item {
+        flex: 0 0 33.333%;
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+      }
+      .trust-item:nth-child(3) { border-right: none; }
+      .trust-item:nth-child(4) { flex: 0 0 50%; }
+      .trust-item:nth-child(5) { flex: 0 0 50%; border-right: none; border-bottom: none; }
+      .trust-item:nth-child(3) { border-bottom: none; }
+
+      /* Services */
+      .services-grid { grid-template-columns: 1fr 1fr; }
+
+      /* About */
+      .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .about-img { height: 380px; }
+      .cert-float { left: 16px; bottom: 16px; }
+
+      /* Gallery — 2 col, reset template areas */
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-areas: none;
+        grid-auto-rows: 220px;
+      }
+      .gallery-grid .g-item { grid-area: auto !important; }
+      .g-item.g-tall { grid-row: span 1; }
+
+      /* Why */
+      .why-card { padding: 2rem 1.75rem; }
+
+      /* Contact */
+      .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .map-wrap iframe { height: 320px; }
+
+      /* Footer */
+      .footer-links { display: none; }
+      .footer-inner { flex-wrap: wrap; gap: 1.5rem; }
+      .footer-right { text-align: left; }
+    }
+
+    /* Mobile (≤640px) */
+    @media (max-width: 640px) {
+      :root { --nav-h: 64px; }
+
+      /* Layout */
+      .container { padding: 0 1.25rem; }
+      .section-pad { padding: 3rem 0; }
+      .section-h { font-size: clamp(1.7rem, 8vw, 2.2rem); }
+
+      /* Nav */
+      .nav-inner { padding: 0 1.25rem; }
+
+      /* Hero */
+      .hero-content {
+        padding-top: calc(var(--nav-h) + 2.5rem);
+        padding-bottom: 3rem;
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+      }
+      .hero-h1 { font-size: clamp(2.6rem, 13vw, 3.8rem); }
+      .hero-sub { font-size: 0.88rem; max-width: 100%; }
+      .hero-ctas { flex-direction: column; gap: 10px; }
+      .hero-ctas .btn { width: 100%; justify-content: center; padding: 15px 20px; }
+
+      /* Trust bar — 3+2 compact */
+      .trust-inner { flex-wrap: wrap; }
+      .trust-item { flex: 0 0 33.333%; padding: 1.1rem 0.6rem; }
+      .trust-val { font-size: 0.95rem; }
+      .trust-label { font-size: 0.56rem; }
+
+      /* Services */
+      .services-grid { grid-template-columns: 1fr; }
+      .svc { padding: 1.75rem 1.5rem; }
+
+      /* About */
+      .about-img { height: 280px; }
+      .about-img-accent { top: -10px; left: -10px; width: 40px; height: 40px; }
+      .about-img-accent-br { bottom: -10px; right: -10px; width: 40px; height: 40px; }
+      .cert-float { left: 12px; bottom: 12px; padding: 10px 14px; gap: 8px; }
+      .cert-float-icon { width: 28px; height: 28px; font-size: 0.8rem; }
+      .cert-float-title { font-size: 0.7rem; }
+      .cert-float-sub { font-size: 0.58rem; }
+      .cert-pills { gap: 6px; }
+      .cert-pill { font-size: 0.6rem; padding: 5px 10px; }
+
+      /* Gallery — 1 col */
+      .gallery-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: none;
+        grid-auto-rows: 230px;
+      }
+      .gallery-grid .g-item { grid-area: auto !important; }
+
+      /* Testimonials */
+      .testi-grid { grid-template-columns: 1fr; }
+      .testi { padding: 1.75rem 1.5rem; }
+
+      /* Why */
+      .why-grid { grid-template-columns: 1fr; }
+      .why-card { padding: 1.75rem 1.5rem; }
+      .why-icon { width: 36px; height: 36px; margin-bottom: 1rem; }
+
+      /* Contact */
+      .map-wrap iframe { height: 260px; }
+      .hours-table td:first-child { padding-right: 1rem; }
+      .hours-table td { font-size: 0.82rem; }
+
+      /* Footer */
+      .footer-inner { flex-direction: column; gap: 1.25rem; }
+      .footer-right { text-align: left; }
+      .footer-copy { margin-top: 4px; }
+
+      /* WhatsApp float */
+      .wa-float { bottom: 18px; right: 18px; width: 48px; height: 48px; }
+      .wa-float svg { width: 24px; height: 24px; }
+    }
+
+    /* Small phones (≤390px) */
+    @media (max-width: 390px) {
+      .hero-h1 { font-size: clamp(2.2rem, 12vw, 3rem); }
+      .hero-eyebrow { font-size: 0.6rem; letter-spacing: 0.14em; }
+      .trust-item { flex: 0 0 33.333%; padding: 0.9rem 0.4rem; }
+      .trust-val { font-size: 0.85rem; }
+      .services-grid { grid-template-columns: 1fr; }
+      .svc-title { font-size: 0.95rem; }
+      .section-h { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAVBAR ──────────────────────────────────── -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="logo-rr">ROAD RUNNERS</span>
+        <span class="logo-sub">Auto Detailing</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#services" class="nav-link">Services</a>
+        <a href="#about"    class="nav-link">About</a>
+        <a href="#gallery"  class="nav-link">Gallery</a>
+        <a href="#contact"  class="nav-link">Contact</a>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:16px;">
+        <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold nav-book-btn" style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;font-size:0.7rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Book Now
+        </a>
+        <div class="ham" id="ham" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="#services" class="nav-link">Services</a>
+    <a href="#about"    class="nav-link">About</a>
+    <a href="#gallery"  class="nav-link">Gallery</a>
+    <a href="#contact"  class="nav-link">Contact</a>
+    <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:0.5rem;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Book Now on WhatsApp
+    </a>
+  </div>
+
+  <!-- ── HERO ────────────────────────────────────── -->
+  <section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-lines"></div>
+    <div class="hero-content">
+      <p class="hero-eyebrow au1">IDA &amp; IDAA Certified &nbsp;·&nbsp; Avadi, Chennai</p>
+      <h1 class="hero-h1 au2">
+        <span class="hero-line1">PRECISION</span>
+        <span class="hero-line2">DETAILING.</span>
+      </h1>
+      <p class="hero-sub au3">Chennai's most trusted ceramic coating and car detailing specialists. 4.9★ rated with 78+ verified reviews.</p>
+      <div class="hero-ctas au4">
+        <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Book a Service
+        </a>
+        <a href="#services" class="btn btn-ghost">View Services</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TRUST BAR ────────────────────────────────── -->
+  <div class="trust-bar">
+    <div class="trust-inner">
+      <div class="trust-item">
+        <div class="trust-val">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          4.9
+        </div>
+        <div class="trust-label">Google Rating</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-val">78+</div>
+        <div class="trust-label">Verified Reviews</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-val">IDA</div>
+        <div class="trust-label">Certified</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-val">IDAA</div>
+        <div class="trust-label">Certified</div>
+      </div>
+      <div class="trust-item">
+        <div class="trust-val">UPI &amp; Cash</div>
+        <div class="trust-label">Accepted</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SERVICES ─────────────────────────────────── -->
+  <section id="services" class="section-pad g-tex">
+    <div class="container">
+      <p class="section-label rv">Our Services</p>
+      <h2 class="section-h rv d1">What We Do Best</h2>
+      <p class="rv d2" style="max-width:520px;">Every service is performed to international detailing standards — the same methods used by the world's best.</p>
+
+      <div class="services-grid">
+
+        <!-- Ceramic Coating – Flagship -->
+        <div class="svc svc-flagship rv">
+          <div class="svc-badge">Most Popular</div>
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3 class="svc-title">Ceramic Coating</h3>
+          <p class="svc-desc">Professional-grade nano-ceramic protection that repels water, UV rays, and contaminants. Lasts 2–5 years with a mirror-perfect finish.</p>
+          <a href="#contact" class="svc-link">Get a Quote →</a>
+          <div class="c-tl"></div>
+          <div class="c-br"></div>
+        </div>
+
+        <!-- Full Car Detailing -->
+        <div class="svc rv d1">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="9" width="22" height="7" rx="2"/>
+              <path d="M4 16v2M20 16v2M3 9l2-5h14l2 5"/>
+              <circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/>
+            </svg>
+          </div>
+          <h3 class="svc-title">Full Car Detailing</h3>
+          <p class="svc-desc">Complete interior and exterior treatment — clay bar, polish, decontamination, and deep clean for a showroom-ready result.</p>
+          <div class="c-tl"></div>
+          <div class="c-br"></div>
+        </div>
+
+        <!-- Exterior Wash -->
+        <div class="svc rv d2">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+            </svg>
+          </div>
+          <h3 class="svc-title">Exterior Wash</h3>
+          <p class="svc-desc">Hand-wash, foam pre-soak, and spotless rinse. Safe on all paint types including matte, satin, and vinyl-wrapped finishes.</p>
+          <div class="c-tl"></div>
+          <div class="c-br"></div>
+        </div>
+
+        <!-- Interior Detailing -->
+        <div class="svc rv">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9h18M3 9a2 2 0 01-2-2V5a2 2 0 012-2h18a2 2 0 012 2v2a2 2 0 01-2 2M3 9v9a2 2 0 002 2h14a2 2 0 002-2V9"/>
+              <path d="M9 9v11M15 9v11"/>
+            </svg>
+          </div>
+          <h3 class="svc-title">Interior Detailing</h3>
+          <p class="svc-desc">Deep vacuum, steam cleaning, leather conditioning, and dashboard restoration. Your cabin returned to factory-new condition.</p>
+          <div class="c-tl"></div>
+          <div class="c-br"></div>
+        </div>
+
+        <!-- Paint Protection -->
+        <div class="svc rv d1">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <rect x="5" y="7" width="14" height="10" rx="1"/>
+              <path d="M2 10h20"/>
+            </svg>
+          </div>
+          <h3 class="svc-title">Paint Protection Film</h3>
+          <p class="svc-desc">Self-healing PPF on high-impact zones — guards against stone chips, scratches, and swirl marks without altering appearance.</p>
+          <div class="c-tl"></div>
+          <div class="c-br"></div>
+        </div>
+
+        <!-- Polish & Wax -->
+        <div class="svc rv d2">
+          <div class="svc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l1.68 5.17H19l-4.34 3.16 1.66 5.17L12 13.17l-4.32 3.33 1.66-5.17L5 8.17h5.32L12 3z"/>
+            </svg>
+          </div>
+          <h3 class="svc-title">Polish &amp; Wax</h3>
+          <p class="svc-desc">Machine polish removes swirl marks and light scratches. Finished with carnauba wax for deep gloss and months of protection.</p>
+          <div class="c-tl"></div>
+          <div class="c-br"></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ─────────────────────────────────────── -->
+  <section id="about" class="section-pad">
+    <div class="container">
+      <div class="about-grid">
+        <!-- Image -->
+        <div class="about-img-wrap rv">
+          <img src="https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=700&auto=format&fit=crop" alt="Car detailing professional at work" class="about-img" loading="lazy">
+          <div class="about-img-accent"></div>
+          <div class="about-img-accent-br"></div>
+          <div class="cert-float">
+            <div class="cert-float-icon">✓</div>
+            <div>
+              <div class="cert-float-title">IDA &amp; IDAA</div>
+              <div class="cert-float-sub">Certified Detailer</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copy -->
+        <div class="about-copy">
+          <span class="section-label rv">About Dinesh</span>
+          <h2 class="section-h rv d1">Passion Meets<br>Precision</h2>
+          <p class="rv d2">Dinesh founded Road Runners Auto Detailing with a single mission: to bring international-grade car care to Chennai. Trained and certified by the International Detailing Association (IDA) and IDAA — the most respected bodies in the industry — every service here is performed to a standard most detailers in the city simply can't match.</p>
+          <p class="rv d2">Located in Paruthippattu, Avadi, Road Runners has become the destination for car enthusiasts across Chennai who refuse to settle for anything less than perfect. From daily drivers to luxury vehicles, every car gets the same meticulous attention.</p>
+          <div class="cert-pills rv d3">
+            <span class="cert-pill">IDA Certified</span>
+            <span class="cert-pill">IDAA Certified</span>
+            <span class="cert-pill">4.9★ Rated</span>
+            <span class="cert-pill">78+ Reviews</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── GALLERY ───────────────────────────────────── -->
+  <section id="gallery" class="section-pad g-tex">
+    <div class="container">
+      <p class="section-label rv">Our Work</p>
+      <h2 class="section-h rv d1">Results That Speak</h2>
+      <p class="rv d2" style="max-width:480px;">A glimpse at the craftsmanship behind every vehicle we touch.</p>
+
+      <div class="gallery-grid">
+        <div class="g-item g-tall rv">
+          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-chennai-car-washing-services-fv4038ml0y.jpg" alt="Road Runners car detailing work" loading="lazy">
+          <div class="g-overlay"><p>Detailing</p></div>
+        </div>
+        <div class="g-item rv d1">
+          <img src="https://content3.jdmagicbox.com/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-chennai-car-washing-services-6b229kj7cf.jpg" alt="Road Runners ceramic coating" loading="lazy">
+          <div class="g-overlay"><p>Ceramic Coating</p></div>
+        </div>
+        <div class="g-item rv d2">
+          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-thiruverkadu-chennai-car-washing-services-knl69n3ov5.jpg" alt="Road Runners car care" loading="lazy">
+          <div class="g-overlay"><p>Car Care</p></div>
+        </div>
+        <div class="g-item g-tall rv">
+          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-chennai-car-washing-services-hv1f7kir58.jpg" alt="Road Runners auto detailing" loading="lazy">
+          <div class="g-overlay"><p>Auto Detailing</p></div>
+        </div>
+        <div class="g-item rv d1">
+          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-thiruverkadu-chennai-car-washing-services-umbekroi94.jpg" alt="Road Runners car wash" loading="lazy">
+          <div class="g-overlay"><p>Paint Protection</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TESTIMONIALS ──────────────────────────────── -->
+  <section id="testimonials" class="section-pad">
+    <div class="container">
+      <p class="section-label rv">What Clients Say</p>
+      <h2 class="section-h rv d1">4.9★ on Google</h2>
+      <p class="rv d2" style="max-width:480px;">78+ real customers. Not a single one disappointed.</p>
+
+      <div class="testi-grid">
+        <div class="testi rv">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-text">"The ceramic coating on my car came out absolutely flawless. Dinesh and his team have a level of precision I've never seen at any other detailer in Chennai. Highly recommended."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">SJ</div>
+            <div>
+              <div class="testi-name">Satbir Jaat</div>
+              <div class="testi-meta">Google Review · Verified</div>
+            </div>
+          </div>
+        </div>
+        <div class="testi rv d1">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-text">"Brought my SUV for full interior detailing before a road trip. Came out spotless — even the vents were clean. Affordable pricing for the quality delivered. Will be back."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">RK</div>
+            <div>
+              <div class="testi-name">Ranjith Kumar</div>
+              <div class="testi-meta">Google Review · Verified</div>
+            </div>
+          </div>
+        </div>
+        <div class="testi rv d2">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-text">"IDA certified and it shows. Got the ceramic coating done 8 months ago — still beads water perfectly. Road Runners is the only place I'll ever take my car. No one in Avadi comes close."</p>
+          <div class="testi-author">
+            <div class="testi-avatar">PV</div>
+            <div>
+              <div class="testi-name">Priya Venkat</div>
+              <div class="testi-meta">Google Review · Verified</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHY CHOOSE US ─────────────────────────────── -->
+  <section id="why" class="section-pad g-tex">
+    <div class="container">
+      <p class="section-label rv">Why Road Runners</p>
+      <h2 class="section-h rv d1">The Difference Is Clear</h2>
+
+      <div class="why-grid">
+        <div class="why-card rv">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+          </div>
+          <h3>IDA &amp; IDAA Certified</h3>
+          <p>International certifications — not self-proclaimed experts. Training backed by the world's leading detailing bodies. Most detailers in Chennai can't say the same.</p>
+        </div>
+        <div class="why-card rv d1">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <h3>Pro-Grade Products</h3>
+          <p>Only industry-leading ceramic coating compounds and detailing chemicals — the same brands trusted by high-end detailers internationally. No shortcuts.</p>
+        </div>
+        <div class="why-card rv d2">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3>Punctual &amp; Transparent</h3>
+          <p>No hidden charges. No delays. We quote accurately upfront and deliver on time — every single appointment. Your time is as valuable as your car.</p>
+        </div>
+        <div class="why-card rv d3">
+          <div class="why-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
+          <h3>Satisfaction Guaranteed</h3>
+          <p>4.9 stars from 78+ real customers doesn't happen by accident. We don't release your car until it meets our own exacting standard — not just yours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONTACT & LOCATION ────────────────────────── -->
+  <section id="contact" class="section-pad">
+    <div class="container">
+      <p class="section-label rv">Find Us</p>
+      <h2 class="section-h rv d1">Visit Road Runners</h2>
+
+      <div class="contact-grid">
+        <!-- Left: details -->
+        <div class="rv d1">
+          <div class="contact-block">
+            <div class="contact-block-label">Address</div>
+            <p>Paruthippattu, Avadi<br>Thiruverkadu, Chennai 600077</p>
+          </div>
+          <div class="contact-block">
+            <div class="contact-block-label">Hours</div>
+            <table class="hours-table">
+              <tr><td>Mon – Thu</td><td>9:30 AM – 8:00 PM</td></tr>
+              <tr><td>Fri – Sat</td><td>9:30 AM – 5:00 PM</td></tr>
+              <tr><td>Sunday</td><td>9:00 AM – 5:00 PM</td></tr>
+            </table>
+          </div>
+          <div class="contact-block">
+            <div class="contact-block-label">Payment</div>
+            <p>UPI &amp; Cash accepted</p>
+          </div>
+          <div class="contact-block">
+            <div class="contact-block-label">Instagram</div>
+            <a href="https://instagram.com/roadrunners_autodetailing" target="_blank" rel="noopener" class="insta-link">@roadrunners_autodetailing</a>
+          </div>
+          <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="margin-top:1rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Chat on WhatsApp
+          </a>
+        </div>
+
+        <!-- Right: Map -->
+        <div class="map-wrap rv d2">
+          <iframe
+            src="https://maps.google.com/maps?q=Road+Runners+Auto+Detailing+Paruthippattu+Avadi+Chennai+600077&output=embed"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="Road Runners Auto Detailing Location">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-logo">ROAD RUNNERS</div>
+          <div class="footer-tagline">Auto Detailing &nbsp;·&nbsp; Avadi, Chennai</div>
+        </div>
+        <div class="footer-links">
+          <a href="#services" class="f-link">Services</a>
+          <a href="#about"    class="f-link">About</a>
+          <a href="#gallery"  class="f-link">Gallery</a>
+          <a href="#contact"  class="f-link">Contact</a>
+        </div>
+        <div class="footer-right">
+          <a href="https://instagram.com/roadrunners_autodetailing" target="_blank" rel="noopener" class="f-link">@roadrunners_autodetailing</a>
+          <div class="footer-copy">© 2025 Road Runners Auto Detailing. All rights reserved.</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── FLOATING WHATSAPP ─────────────────────────── -->
+  <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
+  <!-- ── JAVASCRIPT ─────────────────────────────────── -->
+  <script>
+    // 1. Scroll Reveal
+    const revealItems = document.querySelectorAll('.rv');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('on');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealItems.forEach(el => observer.observe(el));
+
+    // 2. Navbar Scroll Shrink
+    const nav = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+
+    // 3. Mobile Hamburger
+    const ham = document.getElementById('ham');
+    const mobileNav = document.getElementById('mobile-nav');
+    ham.addEventListener('click', () => {
+      ham.classList.toggle('open');
+      mobileNav.classList.toggle('open');
+    });
+
+    // Close mobile nav on link click
+    mobileNav.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        ham.classList.remove('open');
+        mobileNav.classList.remove('open');
+      });
+    });
+
+    // 4. Smooth anchor scroll (with nav offset)
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', e => {
+        const target = document.querySelector(anchor.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          const offset = 80;
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
