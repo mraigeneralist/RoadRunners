@@ -287,14 +287,14 @@
       background-image: url('https://images.unsplash.com/photo-1619405399517-d7fce0f13302?w=1800&auto=format&fit=crop');
       background-size: cover;
       background-position: center 40%;
-      opacity: 0.45;
+      opacity: 0.3;
       animation: fadeIn 1.5s ease 0.1s both;
     }
     .hero-overlay {
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(to top, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.5) 50%, rgba(10,10,10,0.3) 100%),
+        linear-gradient(to top, rgba(5,5,5,1) 0%, rgba(5,5,5,0.75) 40%, rgba(5,5,5,0.55) 100%),
         radial-gradient(ellipse 700px 500px at 10% 90%, rgba(212,160,23,0.08) 0%, transparent 65%);
     }
     /* Noise overlay */
@@ -346,14 +346,17 @@
     .hero-eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
       font-family: 'Montserrat', sans-serif;
       font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.2em;
+      font-weight: 700;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      color: var(--gold);
+      color: var(--gold-bright);
       margin-bottom: 1.75rem;
+      text-shadow: 0 0 20px rgba(212,160,23,0.5), 0 1px 4px rgba(0,0,0,0.8);
+      max-width: 100%;
     }
     .hero-eyebrow::before {
       content: '';
@@ -361,7 +364,8 @@
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: var(--gold);
+      background: var(--gold-bright);
+      box-shadow: 0 0 8px var(--gold-bright);
     }
     .hero-h1 {
       font-family: 'Montserrat', sans-serif;
@@ -375,7 +379,7 @@
     .hero-line2 {
       display: block;
       color: transparent;
-      -webkit-text-stroke: 1.5px rgba(212,160,23,0.7);
+      -webkit-text-stroke: 2px rgba(212,160,23,0.95);
     }
     .hero-sub {
       max-width: 520px;
@@ -616,19 +620,27 @@
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: 220px;
-      gap: 3px;
+      grid-template-rows: repeat(5, 210px);
+      gap: 4px;
       margin-top: 3.5rem;
       grid-template-areas:
-        "a b c"
-        "a d e"
-        ". d .";
+        "a b  c"
+        "a d  c"
+        "e f  g"
+        "h i  g"
+        "h j  j";
     }
-    .gallery-grid .g-item:nth-child(1) { grid-area: a; }
-    .gallery-grid .g-item:nth-child(2) { grid-area: b; }
-    .gallery-grid .g-item:nth-child(3) { grid-area: c; }
-    .gallery-grid .g-item:nth-child(4) { grid-area: d; }
-    .gallery-grid .g-item:nth-child(5) { grid-area: e; }
+    .gallery-grid .g-item:nth-child(1)  { grid-area: a; }
+    .gallery-grid .g-item:nth-child(2)  { grid-area: b; }
+    .gallery-grid .g-item:nth-child(3)  { grid-area: c; }
+    .gallery-grid .g-item:nth-child(4)  { grid-area: d; }
+    .gallery-grid .g-item:nth-child(5)  { grid-area: e; }
+    .gallery-grid .g-item:nth-child(6)  { grid-area: f; }
+    .gallery-grid .g-item:nth-child(7)  { grid-area: g; }
+    .gallery-grid .g-item:nth-child(8)  { grid-area: h; }
+    .gallery-grid .g-item:nth-child(9)  { grid-area: i; }
+    .gallery-grid .g-item:nth-child(10) { grid-area: j; }
+
     .g-item {
       position: relative;
       overflow: hidden;
@@ -638,29 +650,70 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.6s var(--ease-spring);
+      object-position: center;
+      transition: transform 0.65s var(--ease-spring), filter 0.65s ease;
+      /* Quality enhancement: sharpness + vibrance boost */
+      filter: url(#img-enhance) contrast(1.08) saturate(1.22) brightness(1.02);
+      image-rendering: auto;
     }
-    .g-item:hover img { transform: scale(1.06); }
-    .g-item.g-tall { grid-row: span 2; }
+    .g-item:hover img {
+      transform: scale(1.07);
+      filter: url(#img-enhance) contrast(1.1) saturate(1.3) brightness(1.04);
+    }
 
     .g-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(10,10,10,0.75);
+      background: linear-gradient(to top, rgba(5,5,5,0.88) 0%, rgba(5,5,5,0.1) 50%, transparent 100%);
       display: flex;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-end;
+      padding: 1.25rem 1.25rem;
       opacity: 0;
       transition: opacity 0.35s ease;
     }
     .g-item:hover .g-overlay { opacity: 1; }
-    .g-overlay p {
+    .g-overlay-label {
       font-family: 'Montserrat', sans-serif;
-      font-size: 0.8rem;
+      font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: var(--gold);
+      color: var(--gold-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .g-overlay-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1.5px;
+      background: var(--gold-bright);
+    }
+
+    /* Responsive gallery */
+    @media (max-width: 900px) {
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(7, 200px);
+        grid-template-areas:
+          "a  b"
+          "a  c"
+          "d  e"
+          "f  g"
+          "f  h"
+          "i  j"
+          "i  .";
+      }
+    }
+    @media (max-width: 640px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        grid-template-areas: none;
+        gap: 4px;
+      }
+      .gallery-grid .g-item { grid-area: auto !important; height: 240px; }
     }
 
     /* ── TESTIMONIALS ─────────────────────────── */
@@ -881,154 +934,195 @@
       z-index: -1;
     }
 
-    /* ── RESPONSIVE ───────────────────────────── */
+    /* ══════════════════════════════════════════
+       RESPONSIVE — mobile-first, no overflows
+    ══════════════════════════════════════════ */
 
-    /* Tablet landscape (≤1024px) */
-    @media (max-width: 1024px) {
+    /* Prevent ALL horizontal overflow at root level */
+    html, body { max-width: 100%; overflow-x: hidden; }
+    * { min-width: 0; }
+
+    /* ── Tablet landscape ≤1100px ────────────── */
+    @media (max-width: 1100px) {
       .about-grid { gap: 3rem; }
       .contact-grid { gap: 2.5rem; }
-      .section-h { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
     }
 
-    /* Tablet portrait (≤900px) */
+    /* ── Tablet portrait ≤900px ──────────────── */
     @media (max-width: 900px) {
-      /* Nav */
+      /* Nav — hide desktop links, show hamburger, hide Book Now (use !important to beat inline style) */
       .nav-links { display: none; }
       .ham { display: flex; }
-      .nav-book-btn { display: none; }
+      .nav-book-btn { display: none !important; }
 
-      /* Trust bar — wrap into 3+2 */
+      /* Services 2-col */
+      .services-grid { grid-template-columns: 1fr 1fr; }
+
+      /* About single col */
+      .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .about-img { height: 340px; }
+      .cert-float { left: 16px; bottom: 16px; }
+
+      /* Trust bar wraps to 3+2 */
       .trust-inner { flex-wrap: wrap; }
       .trust-item {
         flex: 0 0 33.333%;
         border-right: 1px solid var(--border);
         border-bottom: 1px solid var(--border);
       }
-      .trust-item:nth-child(3) { border-right: none; }
-      .trust-item:nth-child(4) { flex: 0 0 50%; }
-      .trust-item:nth-child(5) { flex: 0 0 50%; border-right: none; border-bottom: none; }
-      .trust-item:nth-child(3) { border-bottom: none; }
+      .trust-item:nth-child(3)  { border-right: none; }
+      .trust-item:nth-child(4)  { flex: 0 0 50%; border-bottom: none; }
+      .trust-item:nth-child(5)  { flex: 0 0 50%; border-right: none; border-bottom: none; }
 
-      /* Services */
-      .services-grid { grid-template-columns: 1fr 1fr; }
-
-      /* About */
-      .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
-      .about-img { height: 380px; }
-      .cert-float { left: 16px; bottom: 16px; }
-
-      /* Gallery — 2 col, reset template areas */
-      .gallery-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-areas: none;
-        grid-auto-rows: 220px;
-      }
-      .gallery-grid .g-item { grid-area: auto !important; }
-      .g-item.g-tall { grid-row: span 1; }
-
-      /* Why */
+      /* Why 2-col stays, just smaller padding */
       .why-card { padding: 2rem 1.75rem; }
 
-      /* Contact */
+      /* Contact single col */
       .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
-      .map-wrap iframe { height: 320px; }
+      .map-wrap iframe { height: 300px; }
 
       /* Footer */
       .footer-links { display: none; }
-      .footer-inner { flex-wrap: wrap; gap: 1.5rem; }
-      .footer-right { text-align: left; }
+      .footer-inner { flex-wrap: wrap; gap: 1.25rem; }
+      .footer-right { text-align: left; width: 100%; }
     }
 
-    /* Mobile (≤640px) */
+    /* ── Mobile ≤640px ───────────────────────── */
     @media (max-width: 640px) {
-      :root { --nav-h: 64px; }
+      :root { --nav-h: 60px; }
 
-      /* Layout */
-      .container { padding: 0 1.25rem; }
-      .section-pad { padding: 3rem 0; }
-      .section-h { font-size: clamp(1.7rem, 8vw, 2.2rem); }
+      /* Global spacing */
+      .container { padding: 0 1rem; }
+      .section-pad { padding: 2.5rem 0; }
+      .section-h { font-size: clamp(1.6rem, 7vw, 2rem); }
 
-      /* Nav */
-      .nav-inner { padding: 0 1.25rem; }
+      /* ─ Navbar ─ */
+      .nav-inner { padding: 0 1rem; }
+      .logo-rr { font-size: 0.9rem; }
 
-      /* Hero */
+      /* ─ Hero ─ */
       .hero-content {
-        padding-top: calc(var(--nav-h) + 2.5rem);
-        padding-bottom: 3rem;
-        padding-left: 1.25rem;
-        padding-right: 1.25rem;
+        padding-top: calc(var(--nav-h) + 2rem);
+        padding-bottom: 2.5rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        width: 100%;
+        box-sizing: border-box;
       }
-      .hero-h1 { font-size: clamp(2.6rem, 13vw, 3.8rem); }
-      .hero-sub { font-size: 0.88rem; max-width: 100%; }
-      .hero-ctas { flex-direction: column; gap: 10px; }
-      .hero-ctas .btn { width: 100%; justify-content: center; padding: 15px 20px; }
+      .hero-eyebrow {
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        white-space: normal;
+        word-break: break-word;
+        max-width: 100%;
+        margin-bottom: 1.25rem;
+      }
+      .hero-h1 {
+        font-size: clamp(2.4rem, 11vw, 3.2rem);
+        margin-bottom: 1.25rem;
+        word-break: break-word;
+      }
+      .hero-sub {
+        font-size: 0.875rem;
+        max-width: 100%;
+        margin-bottom: 2rem;
+      }
+      .hero-ctas {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+      }
+      .hero-ctas .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 20px;
+        font-size: 0.75rem;
+      }
 
-      /* Trust bar — 3+2 compact */
+      /* ─ Trust bar ─ */
       .trust-inner { flex-wrap: wrap; }
-      .trust-item { flex: 0 0 33.333%; padding: 1.1rem 0.6rem; }
-      .trust-val { font-size: 0.95rem; }
-      .trust-label { font-size: 0.56rem; }
-
-      /* Services */
-      .services-grid { grid-template-columns: 1fr; }
-      .svc { padding: 1.75rem 1.5rem; }
-
-      /* About */
-      .about-img { height: 280px; }
-      .about-img-accent { top: -10px; left: -10px; width: 40px; height: 40px; }
-      .about-img-accent-br { bottom: -10px; right: -10px; width: 40px; height: 40px; }
-      .cert-float { left: 12px; bottom: 12px; padding: 10px 14px; gap: 8px; }
-      .cert-float-icon { width: 28px; height: 28px; font-size: 0.8rem; }
-      .cert-float-title { font-size: 0.7rem; }
-      .cert-float-sub { font-size: 0.58rem; }
-      .cert-pills { gap: 6px; }
-      .cert-pill { font-size: 0.6rem; padding: 5px 10px; }
-
-      /* Gallery — 1 col */
-      .gallery-grid {
-        grid-template-columns: 1fr;
-        grid-template-areas: none;
-        grid-auto-rows: 230px;
+      .trust-item {
+        flex: 0 0 33.333%;
+        padding: 1rem 0.5rem;
+        border-right: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
       }
-      .gallery-grid .g-item { grid-area: auto !important; }
+      .trust-item:nth-child(3) { border-right: none; }
+      .trust-item:nth-child(4) { flex: 0 0 50%; border-bottom: none; }
+      .trust-item:nth-child(5) { flex: 0 0 50%; border-right: none; border-bottom: none; }
+      .trust-val { font-size: 0.88rem; }
+      .trust-label { font-size: 0.54rem; }
 
-      /* Testimonials */
+      /* ─ Services ─ */
+      .services-grid { grid-template-columns: 1fr; }
+      .svc { padding: 1.5rem 1.25rem; }
+      .svc-title { font-size: 0.95rem; }
+
+      /* ─ About ─ */
+      .about-img { height: 260px; }
+      .about-img-accent  { top: -8px;  left: -8px;  width: 36px; height: 36px; }
+      .about-img-accent-br { bottom: -8px; right: -8px; width: 36px; height: 36px; }
+      .cert-float {
+        position: relative;
+        left: auto; bottom: auto;
+        margin-top: 1rem;
+        width: 100%;
+      }
+      .cert-pills { flex-wrap: wrap; gap: 6px; }
+      .cert-pill  { font-size: 0.58rem; padding: 5px 10px; }
+
+      /* ─ Testimonials ─ */
       .testi-grid { grid-template-columns: 1fr; }
-      .testi { padding: 1.75rem 1.5rem; }
+      .testi { padding: 1.5rem 1.25rem; }
+      .testi-text { font-size: 0.85rem; }
 
-      /* Why */
+      /* ─ Why ─ */
       .why-grid { grid-template-columns: 1fr; }
-      .why-card { padding: 1.75rem 1.5rem; }
-      .why-icon { width: 36px; height: 36px; margin-bottom: 1rem; }
+      .why-card { padding: 1.5rem 1.25rem; }
+      .why-icon { width: 34px; height: 34px; margin-bottom: 0.85rem; }
+      .why-card h3 { font-size: 0.95rem; }
+      .why-card p { font-size: 0.82rem; }
 
-      /* Contact */
-      .map-wrap iframe { height: 260px; }
-      .hours-table td:first-child { padding-right: 1rem; }
-      .hours-table td { font-size: 0.82rem; }
+      /* ─ Contact ─ */
+      .contact-block p { font-size: 0.875rem; }
+      .map-wrap iframe { height: 250px; }
+      .hours-table td { font-size: 0.8rem; padding: 4px 0; }
+      .hours-table td:first-child { padding-right: 0.75rem; }
 
-      /* Footer */
-      .footer-inner { flex-direction: column; gap: 1.25rem; }
+      /* ─ Footer ─ */
+      .footer-inner { flex-direction: column; gap: 1rem; }
       .footer-right { text-align: left; }
-      .footer-copy { margin-top: 4px; }
+      .footer-copy { font-size: 0.68rem; }
 
-      /* WhatsApp float */
-      .wa-float { bottom: 18px; right: 18px; width: 48px; height: 48px; }
-      .wa-float svg { width: 24px; height: 24px; }
+      /* ─ WhatsApp float ─ */
+      .wa-float { bottom: 16px; right: 16px; width: 46px; height: 46px; }
+      .wa-float svg { width: 22px; height: 22px; }
     }
 
-    /* Small phones (≤390px) */
-    @media (max-width: 390px) {
-      .hero-h1 { font-size: clamp(2.2rem, 12vw, 3rem); }
-      .hero-eyebrow { font-size: 0.6rem; letter-spacing: 0.14em; }
-      .trust-item { flex: 0 0 33.333%; padding: 0.9rem 0.4rem; }
-      .trust-val { font-size: 0.85rem; }
-      .services-grid { grid-template-columns: 1fr; }
-      .svc-title { font-size: 0.95rem; }
-      .section-h { font-size: 1.6rem; }
+    /* ── Very small phones ≤380px ────────────── */
+    @media (max-width: 380px) {
+      .hero-h1 { font-size: clamp(2rem, 10vw, 2.6rem); }
+      .hero-eyebrow { font-size: 0.56rem; }
+      .trust-item { padding: 0.85rem 0.4rem; }
+      .trust-val { font-size: 0.82rem; }
+      .trust-label { font-size: 0.5rem; }
+      .section-h { font-size: 1.5rem; }
+      .svc { padding: 1.25rem 1rem; }
     }
   </style>
 </head>
 <body>
+
+  <!-- SVG filter for image sharpening / quality enhancement -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="img-enhance" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+        <!-- Unsharp mask: sharpen edges -->
+        <feGaussianBlur stdDeviation="0.4" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="arithmetic" k1="0" k2="1.4" k3="-0.4" k4="0"/>
+      </filter>
+    </defs>
+  </svg>
 
   <!-- ── NAVBAR ──────────────────────────────────── -->
   <nav id="navbar">
@@ -1046,7 +1140,7 @@
       </div>
 
       <div style="display:flex;align-items:center;gap:16px;">
-        <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold nav-book-btn" style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;font-size:0.7rem;">
+        <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold nav-book-btn" style="align-items:center;gap:7px;padding:10px 20px;font-size:0.7rem;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Book Now
         </a>
@@ -1063,7 +1157,7 @@
     <a href="#about"    class="nav-link">About</a>
     <a href="#gallery"  class="nav-link">Gallery</a>
     <a href="#contact"  class="nav-link">Contact</a>
-    <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:0.5rem;">
+    <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:0.5rem;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       Book Now on WhatsApp
     </a>
@@ -1082,7 +1176,7 @@
       </h1>
       <p class="hero-sub au3">Chennai's most trusted ceramic coating and car detailing specialists. 4.9★ rated with 78+ verified reviews.</p>
       <div class="hero-ctas au4">
-        <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold">
+        <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Book a Service
         </a>
@@ -1261,26 +1355,63 @@
       <p class="rv d2" style="max-width:480px;">A glimpse at the craftsmanship behind every vehicle we touch.</p>
 
       <div class="gallery-grid">
-        <div class="g-item g-tall rv">
-          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-chennai-car-washing-services-fv4038ml0y.jpg" alt="Road Runners car detailing work" loading="lazy">
-          <div class="g-overlay"><p>Detailing</p></div>
+
+        <div class="g-item rv">
+          <img src="images/image.png" alt="Hyundai Creta ceramic coating" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Ceramic Coating</div></div>
         </div>
+
         <div class="g-item rv d1">
-          <img src="https://content3.jdmagicbox.com/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-chennai-car-washing-services-6b229kj7cf.jpg" alt="Road Runners ceramic coating" loading="lazy">
-          <div class="g-overlay"><p>Ceramic Coating</p></div>
+          <img src="images/image2.png" alt="BMW detailing at Road Runners" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Paint Correction</div></div>
         </div>
+
         <div class="g-item rv d2">
-          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-thiruverkadu-chennai-car-washing-services-knl69n3ov5.jpg" alt="Road Runners car care" loading="lazy">
-          <div class="g-overlay"><p>Car Care</p></div>
+          <img src="images/image3.png" alt="SUV ceramic coating" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Ceramic Coating</div></div>
         </div>
-        <div class="g-item g-tall rv">
-          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-chennai-car-washing-services-hv1f7kir58.jpg" alt="Road Runners auto detailing" loading="lazy">
-          <div class="g-overlay"><p>Auto Detailing</p></div>
-        </div>
+
         <div class="g-item rv d1">
-          <img src="https://content3.jdmagicbox.com/v2/comp/chennai/l6/044pxx44.xx44.230304103143.z1l6/catalogue/road-runners-auto-detailing-thiruverkadu-chennai-car-washing-services-umbekroi94.jpg" alt="Road Runners car wash" loading="lazy">
-          <div class="g-overlay"><p>Paint Protection</p></div>
+          <img src="images/image4.png" alt="Honda CBR bike detailing" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Bike Detailing</div></div>
         </div>
+
+        <div class="g-item rv">
+          <img src="images/image5.png" alt="Mahindra Thar paint protection" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Paint Protection</div></div>
+        </div>
+
+        <div class="g-item rv d1">
+          <img src="images/image6.png" alt="Exterior foam wash" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Exterior Wash</div></div>
+        </div>
+
+        <div class="g-item rv d2">
+          <img src="images/image7.png" alt="Jaguar full detailing" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Full Detailing</div></div>
+        </div>
+
+        <div class="g-item rv">
+          <img src="images/image8.png" alt="Skoda detailing" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Interior Detail</div></div>
+        </div>
+
+        <div class="g-item rv d1">
+          <img src="images/image9.png" alt="Road Runners auto detailing work" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Detailing</div></div>
+        </div>
+
+        <div class="g-item rv d2">
+          <img src="images/image10.png" alt="Road Runners ceramic coating work" loading="lazy">
+          <div class="g-overlay"><div class="g-overlay-label">Ceramic Coating</div></div>
+        </div>
+
+      </div>
+
+      <div style="text-align:center;margin-top:2rem;" class="rv">
+        <a href="https://www.google.com/maps/place/Road+Runners+Auto+Detailing+-+Car+Ceramic+coating+Avadi/@13.0942368,80.1086043,17z" target="_blank" rel="noopener" class="btn btn-ghost" style="margin:0 auto;">
+          View All Photos on Google Maps →
+        </a>
       </div>
     </div>
   </section>
@@ -1409,7 +1540,7 @@
             <div class="contact-block-label">Instagram</div>
             <a href="https://instagram.com/roadrunners_autodetailing" target="_blank" rel="noopener" class="insta-link">@roadrunners_autodetailing</a>
           </div>
-          <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="margin-top:1rem;">
+          <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="margin-top:1rem;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             Chat on WhatsApp
           </a>
@@ -1452,7 +1583,7 @@
   </footer>
 
   <!-- ── FLOATING WHATSAPP ─────────────────────────── -->
-  <a href="https://wa.me/91XXXXXXXXXX?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+  <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
     <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
   </a>
 
