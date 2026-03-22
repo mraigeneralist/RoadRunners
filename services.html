@@ -24,24 +24,108 @@
     ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--gold); border-radius:2px; }
     a { text-decoration:none; color:inherit; }
 
-    /* NAVBAR */
-    #navbar { position:fixed; top:0; left:0; right:0; z-index:100; height:var(--nav-h); border-bottom:1px solid transparent; transition:background 0.3s,border-color 0.3s,backdrop-filter 0.3s; }
-    #navbar.scrolled { background:rgba(10,10,10,0.88); backdrop-filter:blur(16px); border-bottom-color:var(--border); }
-    .nav-inner { max-width:1200px; margin:0 auto; height:100%; padding:0 24px; display:flex; align-items:center; justify-content:space-between; }
-    .nav-logo { text-decoration:none; line-height:1; }
-    .logo-rr { display:block; font-family:'Montserrat',sans-serif; font-weight:900; font-size:1.05rem; letter-spacing:0.12em; color: var(--text); }
-    .logo-sub { display:block; font-size:0.6rem; letter-spacing:0.22em; color:var(--gold); text-transform:uppercase; margin-top:2px; }
-    .nav-links { display:flex; gap:32px; }
-    .nav-link { color:var(--muted); text-decoration:none; font-size:0.82rem; letter-spacing:0.06em; text-transform:uppercase; transition:color 0.2s; }
-    .nav-link:hover, .nav-link.active { color:var(--text); }
-    .btn { display:inline-flex; align-items:center; gap:7px; padding:10px 20px; border-radius:6px; font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; text-decoration:none; transition:all 0.2s; }
-    .btn-gold { background:var(--gold); color:#000; } .btn-gold:hover { background:var(--gold-bright); transform:translateY(-1px); }
-    .btn-outline { background:transparent; color:var(--gold); border:1px solid var(--gold); } .btn-outline:hover { background:var(--gold-glow); }
-    .ham { display:none; flex-direction:column; gap:5px; cursor:pointer; padding:4px; }
-    .ham span { display:block; width:22px; height:2px; background:var(--text); border-radius:2px; transition:all 0.3s; }
-    .mobile-nav { display:none; flex-direction:column; gap:0; position:fixed; top:var(--nav-h); left:0; right:0; background:rgba(10,10,10,0.97); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); z-index:99; padding:16px 24px 24px; transform:translateY(-110%); transition:transform 0.3s var(--ease-spring); }
-    .mobile-nav.open { transform:translateY(0); display:flex; }
-    .mobile-nav .nav-link { padding:14px 0; border-bottom:1px solid var(--border); font-size:0.9rem; }
+    /* ── NAVBAR ───────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      height: var(--nav-h);
+      background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0) 100%);
+      border-bottom: 1px solid transparent;
+      transition: background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+    }
+    nav.scrolled {
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom-color: var(--border);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+    .logo-rr {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+    .logo-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+    .nav-link {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(240,240,234,0.85);
+      transition: color 0.2s ease;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    }
+    .nav-link:hover, .nav-link.active { color: var(--gold); }
+
+    .ham {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .ham span {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      background: var(--text);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .ham.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .ham.open span:nth-child(2) { opacity: 0; }
+    .ham.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      top: var(--nav-h);
+      left: 0; right: 0;
+      background: rgba(10,10,10,0.97);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      flex-direction: column;
+      gap: 1.25rem;
+      transform: translateY(-8px);
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s var(--ease-spring);
+      z-index: 999;
+    }
+    .mobile-nav.open {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .mobile-nav .nav-link { font-size: 0.85rem; color: var(--text); }
 
     /* PAGE HERO */
     .page-hero { padding:calc(var(--nav-h) + 80px) 24px 64px; text-align:center; background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(212,160,23,0.07) 0%,transparent 70%); border-bottom:1px solid var(--border); }
@@ -102,31 +186,38 @@
         <span class="logo-rr">ROAD RUNNERS</span>
         <span class="logo-sub">Auto Detailing</span>
       </a>
+
       <div class="nav-links">
-        <a href="index.html" class="nav-link">Home</a>
         <a href="services.html" class="nav-link active">Services</a>
         <a href="packages.html" class="nav-link">Packages</a>
-        <a href="about.html" class="nav-link">About</a>
-        <a href="gallery.html" class="nav-link">Gallery</a>
-        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="about.html"    class="nav-link">About</a>
+        <a href="gallery.html"  class="nav-link">Gallery</a>
+        <a href="contact.html"  class="nav-link">Contact</a>
       </div>
+
       <div style="display:flex;align-items:center;gap:16px;">
-        <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold nav-book-btn" style="font-size:0.7rem;padding:10px 20px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Book Now
+        <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold nav-book-btn" style="align-items:center;gap:7px;padding:10px 20px;font-size:0.7rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Book Now
         </a>
-        <div class="ham" id="ham" aria-label="Menu"><span></span><span></span><span></span></div>
+        <div class="ham" id="ham" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </div>
       </div>
     </div>
   </nav>
 
+  <!-- Mobile Nav -->
   <div class="mobile-nav" id="mobile-nav">
-    <a href="index.html" class="nav-link">Home</a>
-    <a href="services.html" class="nav-link">Services</a>
+    <a href="services.html" class="nav-link active">Services</a>
     <a href="packages.html" class="nav-link">Packages</a>
-    <a href="about.html" class="nav-link">About</a>
-    <a href="gallery.html" class="nav-link">Gallery</a>
-    <a href="contact.html" class="nav-link">Contact</a>
-    <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" class="btn btn-gold" style="margin-top:12px;justify-content:center;">Book Now</a>
+    <a href="about.html"    class="nav-link">About</a>
+    <a href="gallery.html"  class="nav-link">Gallery</a>
+    <a href="contact.html"  class="nav-link">Contact</a>
+    <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:0.5rem;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Book Now on WhatsApp
+    </a>
   </div>
 
   <div class="page-hero">
