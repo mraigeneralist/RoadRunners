@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Services & Packages — Road Runners Auto Detailing</title>
+  <meta name="description" content="Road Runners car detailing packages and services in Avadi, Chennai. Full Throttle, Rapid Refresh, Extreme Body Detail Wash, Ultimate Interior Deep Clean.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%230a0a0a'/><text x='50%25' y='54%25' dominant-baseline='central' text-anchor='middle' font-family='serif' font-weight='900' font-size='14' fill='%23d4a017'>RR</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    :root {
+      --bg:          #0a0a0a;
+      --bg-card:     #111111;
+      --bg-float:    #181818;
+      --border:      #1e1e1e;
+      --border-mid:  #2a2a2a;
+      --gold:        #d4a017;
+      --gold-bright: #f0b429;
+      --gold-glow:   rgba(212,160,23,0.10);
+      --text:        #f0f0ea;
+      --muted:       #888888;
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+      --nav-h:       72px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAVBAR ──────────────────────────────── */
+    #navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      border-bottom: 1px solid transparent;
+      transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
+    }
+    #navbar.scrolled {
+      background: rgba(10,10,10,0.88);
+      backdrop-filter: blur(16px);
+      border-bottom-color: var(--border);
+    }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      height: 100%; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo { text-decoration: none; line-height: 1; }
+    .logo-rr  { display: block; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.05rem; letter-spacing: 0.12em; color: var(--gold); }
+    .logo-sub { display: block; font-size: 0.6rem; letter-spacing: 0.22em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+    .nav-links { display: flex; gap: 32px; }
+    .nav-link { color: var(--muted); text-decoration: none; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; transition: color 0.2s; }
+    .nav-link:hover, .nav-link.active { color: var(--text); }
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; border-radius: 6px; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; transition: all 0.2s; }
+    .btn-gold { background: var(--gold); color: #000; }
+    .btn-gold:hover { background: var(--gold-bright); transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: var(--gold); border: 1px solid var(--gold); }
+    .btn-outline:hover { background: var(--gold-glow); }
+
+    .ham { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+    .ham span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s; }
+
+    .mobile-nav {
+      display: none; flex-direction: column; gap: 0;
+      position: fixed; top: var(--nav-h); left: 0; right: 0;
+      background: rgba(10,10,10,0.97);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 99; padding: 16px 24px 24px;
+      transform: translateY(-110%); transition: transform 0.3s var(--ease-spring);
+    }
+    .mobile-nav.open { transform: translateY(0); display: flex; }
+    .mobile-nav .nav-link { padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+
+    /* ── PAGE HERO ───────────────────────────── */
+    .page-hero {
+      padding: calc(var(--nav-h) + 80px) 24px 64px;
+      text-align: center;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,160,23,0.07) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border);
+    }
+    .page-hero .label {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--gold);
+      border: 1px solid rgba(212,160,23,0.3);
+      padding: 6px 16px; border-radius: 99px;
+      margin-bottom: 20px;
+    }
+    .page-hero h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900; letter-spacing: -0.02em;
+      line-height: 1.1; margin-bottom: 16px;
+    }
+    .page-hero p {
+      color: var(--muted); font-size: 1rem; max-width: 520px; margin: 0 auto 32px;
+    }
+
+    /* ── SECTION ─────────────────────────────── */
+    section { padding: 80px 24px; }
+    .section-inner { max-width: 1160px; margin: 0 auto; }
+    .section-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      font-weight: 800; letter-spacing: -0.01em;
+      margin-bottom: 12px;
+    }
+    .section-sub { color: var(--muted); max-width: 560px; margin-bottom: 48px; font-size: 0.95rem; }
+
+    /* ── PACKAGE CARDS ───────────────────────── */
+    .packages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .pkg-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .pkg-card:hover { border-color: rgba(212,160,23,0.4); transform: translateY(-4px); }
+
+    .pkg-header {
+      padding: 24px 24px 20px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--bg-float) 0%, var(--bg-card) 100%);
+    }
+    .pkg-badge {
+      display: inline-block;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em;
+      text-transform: uppercase; color: #000;
+      background: var(--gold); padding: 3px 10px; border-radius: 99px;
+      margin-bottom: 12px;
+    }
+    .pkg-name {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em;
+      margin-bottom: 6px;
+    }
+    .pkg-tagline { font-size: 0.78rem; color: var(--gold); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+    .pkg-duration { font-size: 0.78rem; color: var(--muted); }
+    .pkg-duration span { color: var(--text); font-weight: 500; }
+
+    .pkg-includes {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      flex: 1;
+    }
+    .pkg-includes-title {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+    }
+    .pkg-includes ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .pkg-includes li {
+      font-size: 0.82rem; color: var(--muted);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .pkg-includes li::before {
+      content: '';
+      display: inline-block; flex-shrink: 0;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--gold); margin-top: 7px;
+    }
+
+    .pkg-pricing {
+      padding: 20px 24px;
+    }
+    .pkg-pricing-title {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+    }
+    .price-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .price-row:last-child { border-bottom: none; }
+    .price-row .car-type { color: var(--muted); }
+    .price-row .price { color: var(--gold); font-weight: 700; font-family: 'Montserrat', sans-serif; font-size: 0.95rem; }
+
+    /* ── SERVICES CARDS ──────────────────────── */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .svc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .svc-card:hover { border-color: rgba(212,160,23,0.3); transform: translateY(-3px); }
+    .svc-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1rem; }
+    .svc-desc { font-size: 0.82rem; color: var(--muted); flex: 1; }
+    .svc-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+    .svc-price { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--gold); }
+    .svc-duration { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── T&C NOTE ────────────────────────────── */
+    .tc-note {
+      background: var(--bg-float);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 32px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .tc-note strong { color: var(--text); }
+
+    /* ── CTA BANNER ──────────────────────────── */
+    .cta-section {
+      padding: 80px 24px;
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(212,160,23,0.06) 0%, transparent 70%);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .cta-section h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800; margin-bottom: 12px;
+    }
+    .cta-section p { color: var(--muted); margin-bottom: 28px; font-size: 0.95rem; }
+    .cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── FOOTER ──────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--gold); }
+
+    /* ── SCROLL REVEAL ───────────────────────── */
+    .rv { opacity: 0; transform: translateY(28px); transition: opacity 0.9s var(--ease-spring), transform 0.9s var(--ease-spring); }
+    .rv.on { opacity: 1; transform: none; }
+
+    /* ── RESPONSIVE ──────────────────────────── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .ham { display: flex; }
+    }
+    @media (max-width: 640px) {
+      section { padding: 56px 16px; }
+      .packages-grid, .services-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-rr">ROAD RUNNERS</span>
+        <span class="logo-sub">Auto Detailing</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html#services" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link active">Services</a>
+        <a href="index.html#about"   class="nav-link">About</a>
+        <a href="index.html#gallery" class="nav-link">Gallery</a>
+        <a href="index.html#contact" class="nav-link">Contact</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" rel="noopener" class="btn btn-gold" style="font-size:0.7rem;padding:10px 20px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Book Now
+        </a>
+        <div class="ham" id="ham" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <div class="mobile-nav" id="mobile-nav">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="services.html" class="nav-link">Services</a>
+    <a href="index.html#about"   class="nav-link">About</a>
+    <a href="index.html#gallery" class="nav-link">Gallery</a>
+    <a href="index.html#contact" class="nav-link">Contact</a>
+    <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" class="btn btn-gold" style="margin-top:12px;justify-content:center;">Book Now</a>
+  </div>
+
+  <!-- PAGE HERO -->
+  <div class="page-hero">
+    <div class="label">Pricing</div>
+    <h1>Services &amp; Packages</h1>
+    <p>Transparent pricing for every car type. No hidden charges — what you see is what you pay.</p>
+    <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" class="btn btn-gold">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Book via WhatsApp
+    </a>
+  </div>
+
+  <!-- PACKAGES -->
+  <section id="packages">
+    <div class="section-inner">
+      <p class="section-label rv">Packages</p>
+      <h2 class="section-title rv">Choose Your Package</h2>
+      <p class="section-sub rv">All packages include a final quality check. Prices vary by car size — select yours below.</p>
+
+      <div class="packages-grid">
+
+        <!-- Full Throttle -->
+        <div class="pkg-card rv">
+          <div class="pkg-header">
+            <div class="pkg-badge">Quick Wash</div>
+            <div class="pkg-name">Full Throttle</div>
+            <div class="pkg-tagline">Quick Wash</div>
+            <div class="pkg-duration">Duration: <span>~30 min</span></div>
+          </div>
+          <div class="pkg-includes">
+            <div class="pkg-includes-title">What's included</div>
+            <ul>
+              <li>Quick Exterior Foam Wash</li>
+              <li>Tyres Brush &amp; Polish</li>
+              <li>Plastics Brush &amp; Polish</li>
+              <li>Glass Clean</li>
+            </ul>
+          </div>
+          <div class="pkg-pricing">
+            <div class="pkg-pricing-title">Pricing by car type</div>
+            <div class="price-row"><span class="car-type">Hatchback</span><span class="price">₹500</span></div>
+            <div class="price-row"><span class="car-type">Sedan / Compact SUV</span><span class="price">₹550</span></div>
+            <div class="price-row"><span class="car-type">Crossover / Long Sedan</span><span class="price">₹600</span></div>
+            <div class="price-row"><span class="car-type">MUV / SUV</span><span class="price">₹699</span></div>
+          </div>
+        </div>
+
+        <!-- Rapid Refresh -->
+        <div class="pkg-card rv">
+          <div class="pkg-header">
+            <div class="pkg-badge">Deluxe Wash &amp; Vac</div>
+            <div class="pkg-name">Rapid Refresh</div>
+            <div class="pkg-tagline">Deluxe Wash &amp; Vac</div>
+            <div class="pkg-duration">Duration: <span>~60 min</span></div>
+          </div>
+          <div class="pkg-includes">
+            <div class="pkg-includes-title">What's included</div>
+            <ul>
+              <li>Exterior Foam Wash with pH Neutral Shampoo</li>
+              <li>Tyres Scrub &amp; Polish</li>
+              <li>Plastics Scrub &amp; Polish</li>
+              <li>Interior Vacuum Clean</li>
+              <li>Interior Wipe Down</li>
+              <li>Interior Detailing</li>
+            </ul>
+          </div>
+          <div class="pkg-pricing">
+            <div class="pkg-pricing-title">Pricing by car type</div>
+            <div class="price-row"><span class="car-type">Hatchback</span><span class="price">₹699</span></div>
+            <div class="price-row"><span class="car-type">Sedan / Compact SUV</span><span class="price">₹749</span></div>
+            <div class="price-row"><span class="car-type">Crossover / Long Sedan</span><span class="price">₹799</span></div>
+            <div class="price-row"><span class="car-type">MUV / SUV</span><span class="price">₹949</span></div>
+          </div>
+        </div>
+
+        <!-- Extreme Body Detail Wash -->
+        <div class="pkg-card rv">
+          <div class="pkg-header">
+            <div class="pkg-badge">Advanced Exterior</div>
+            <div class="pkg-name">Extreme Body Detail Wash</div>
+            <div class="pkg-tagline">Deep Cleaning &amp; Maintenance</div>
+            <div class="pkg-duration">Duration: <span>~120 min</span></div>
+          </div>
+          <div class="pkg-includes">
+            <div class="pkg-includes-title">What's included</div>
+            <ul>
+              <li>Exterior Foam Wash with pH Neutral Shampoo</li>
+              <li>Badges &amp; Monograms Deep Cleaning</li>
+              <li>Edges &amp; Corners Decontamination</li>
+              <li>Tyres &amp; Wheel Arch Deep Clean</li>
+              <li>Mild Tar Removal</li>
+              <li>Alloy Wheels Deep Clean</li>
+              <li>Exterior Plastics Deep Clean &amp; Conditioning</li>
+              <li>Interior General Wipe Down &amp; Dressing</li>
+              <li>Streak-Free Glasses</li>
+            </ul>
+          </div>
+          <div class="pkg-pricing">
+            <div class="pkg-pricing-title">Pricing by car type</div>
+            <div class="price-row"><span class="car-type">Hatchback</span><span class="price">₹1,999</span></div>
+            <div class="price-row"><span class="car-type">Sedan / Compact SUV</span><span class="price">₹2,199</span></div>
+            <div class="price-row"><span class="car-type">Crossover / Long Sedan</span><span class="price">₹2,399</span></div>
+            <div class="price-row"><span class="car-type">MUV / SUV</span><span class="price">₹2,499</span></div>
+          </div>
+        </div>
+
+        <!-- Ultimate Interior Deep Clean -->
+        <div class="pkg-card rv">
+          <div class="pkg-header">
+            <div class="pkg-badge">Complete Interior</div>
+            <div class="pkg-name">Ultimate Interior Deep Clean</div>
+            <div class="pkg-tagline">Complete Interior Restoration</div>
+            <div class="pkg-duration">Duration: <span>~150 min</span></div>
+          </div>
+          <div class="pkg-includes">
+            <div class="pkg-includes-title">What's included</div>
+            <ul>
+              <li>Exterior Foam Wash with pH Neutral Shampoo</li>
+              <li>Interior Deep Vacuum Clean</li>
+              <li>Upholstery &amp; Seats Deep Clean (Leather)</li>
+              <li>Dashboard, Door Pads &amp; Steering Wheel Deep Clean</li>
+              <li>Roof Lining Gentle Clean</li>
+              <li>Trims &amp; Plastics Dressing</li>
+              <li>Streak-Free Glasses</li>
+              <li>Fabric Seat Cleaning from ₹3,499</li>
+            </ul>
+          </div>
+          <div class="pkg-pricing">
+            <div class="pkg-pricing-title">Pricing by car type</div>
+            <div class="price-row"><span class="car-type">Hatchback</span><span class="price">₹2,499</span></div>
+            <div class="price-row"><span class="car-type">Sedan / Compact SUV</span><span class="price">₹2,699</span></div>
+            <div class="price-row"><span class="car-type">Crossover / Long Sedan</span><span class="price">₹2,899</span></div>
+            <div class="price-row"><span class="car-type">MUV / SUV</span><span class="price">₹3,399</span></div>
+          </div>
+        </div>
+
+      </div><!-- /packages-grid -->
+
+      <div class="tc-note rv">
+        <strong>Terms &amp; Conditions:</strong> Prices are starting prices and may vary based on vehicle size, condition, and dirt level. Additional services or extra work will be charged separately. Heavy mud, tar, grease, pet hair, or excessive contamination may attract additional charges. Package duration is approximate. Prior appointment is recommended.
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <div class="section-inner">
+      <h2 class="rv">Ready to book?</h2>
+      <p class="rv">Message us on WhatsApp and we'll get you scheduled.</p>
+      <div class="cta-btns rv">
+        <a href="https://wa.me/919176347862?text=Hi%20Road%20Runners%2C%20I%27d%20like%20to%20book%20a%20service." target="_blank" class="btn btn-gold">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Book via WhatsApp
+        </a>
+        <a href="index.html" class="btn btn-outline">Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2026 Road Runners Auto Detailing · Avadi, Chennai &nbsp;·&nbsp; <a href="index.html">Home</a> &nbsp;·&nbsp; <a href="index.html#contact">Contact</a></p>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    const nav = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+
+    // Mobile hamburger
+    const ham = document.getElementById('ham');
+    const mobileNav = document.getElementById('mobile-nav');
+    ham.addEventListener('click', () => {
+      mobileNav.classList.toggle('open');
+    });
+    mobileNav.querySelectorAll('.nav-link').forEach(l => {
+      l.addEventListener('click', () => mobileNav.classList.remove('open'));
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); observer.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.rv').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
