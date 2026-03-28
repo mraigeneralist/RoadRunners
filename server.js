@@ -31,7 +31,6 @@ const razorpay = new Razorpay({
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
 
 function generateBookingId() {
   const year = new Date().getFullYear();
@@ -293,6 +292,9 @@ async function sendWhatsAppNotifications(booking) {
     }
   }
 }
+
+// Static files — AFTER API routes so /api/* routes are matched first
+app.use(express.static(__dirname));
 
 app.listen(PORT, () => {
   console.log(`RoadRunners server running at http://localhost:${PORT}`);
