@@ -1,0 +1,26 @@
+{
+  "name": "roadrunnerswebsite",
+  "version": "1.0.0",
+  "description": "RoadRunners Auto Detailing — Website with Booking System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mraigeneralist/RoadRunners.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mraigeneralist/RoadRunners/issues"
+  },
+  "homepage": "https://github.com/mraigeneralist/RoadRunners#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}

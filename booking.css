@@ -1,0 +1,566 @@
+/* ── BOOKING MODAL ─────────────────────────── */
+.booking-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.booking-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.booking-modal {
+  background: #0f0f0f;
+  border: 1px solid #1e1e1e;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,160,23,0.08);
+}
+
+.booking-modal::-webkit-scrollbar { width: 4px; }
+.booking-modal::-webkit-scrollbar-track { background: transparent; }
+.booking-modal::-webkit-scrollbar-thumb { background: #d4a017; border-radius: 2px; }
+
+.booking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #1e1e1e;
+  position: sticky;
+  top: 0;
+  background: #0f0f0f;
+  z-index: 2;
+}
+.booking-header h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f0f0ea;
+}
+.booking-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #2a2a2a;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: border-color 0.2s, color 0.2s;
+}
+.booking-close:hover { border-color: #d4a017; color: #d4a017; }
+
+/* Progress bar */
+.booking-progress {
+  display: flex;
+  gap: 4px;
+  padding: 0 1.5rem;
+  margin-top: 1rem;
+}
+.booking-progress-step {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: #1e1e1e;
+  transition: background 0.4s ease;
+}
+.booking-progress-step.done { background: #d4a017; }
+.booking-progress-step.active { background: rgba(212,160,23,0.4); }
+
+.booking-body {
+  padding: 1.5rem;
+}
+
+/* Step labels */
+.step-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d4a017;
+  margin-bottom: 0.5rem;
+}
+.step-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f0f0ea;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+/* Service cards */
+.service-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.service-card {
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.2s ease;
+}
+.service-card:hover {
+  border-color: #2a2a2a;
+  background: #1a1a1a;
+  transform: translateY(-1px);
+}
+.service-card.selected {
+  border-color: #d4a017;
+  background: rgba(212,160,23,0.06);
+}
+.service-card-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f0f0ea;
+  margin-bottom: 2px;
+}
+.service-card-desc {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+/* Vehicle type options */
+.vehicle-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 1rem;
+}
+.vehicle-option {
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+  text-align: center;
+}
+.vehicle-option:hover {
+  border-color: #2a2a2a;
+  background: #1a1a1a;
+}
+.vehicle-option.selected {
+  border-color: #d4a017;
+  background: rgba(212,160,23,0.06);
+}
+.vehicle-option-type {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #f0f0ea;
+  margin-bottom: 4px;
+}
+.vehicle-option-price {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #d4a017;
+}
+
+/* Date picker */
+.date-input-wrap {
+  position: relative;
+}
+.date-input-wrap input[type="date"] {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  color: #f0f0ea;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.25s ease;
+  -webkit-appearance: none;
+}
+.date-input-wrap input[type="date"]:focus {
+  border-color: #d4a017;
+}
+.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) hue-rotate(5deg) brightness(1.2);
+  cursor: pointer;
+}
+
+/* Time slots */
+.time-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.time-slot {
+  padding: 0.7rem 0.5rem;
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f0f0ea;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.time-slot:hover:not(.booked) {
+  border-color: #2a2a2a;
+  background: #1a1a1a;
+}
+.time-slot.selected {
+  border-color: #d4a017;
+  background: rgba(212,160,23,0.06);
+  color: #d4a017;
+}
+.time-slot.booked {
+  opacity: 0.3;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* Form fields */
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-group label {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.4rem;
+}
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  color: #f0f0ea;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.25s ease;
+}
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: #d4a017;
+}
+.form-group textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #555;
+}
+
+/* Review summary */
+.review-summary {
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #1a1a1a;
+}
+.review-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.review-label {
+  font-size: 0.78rem;
+  color: #888;
+}
+.review-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f0f0ea;
+  text-align: right;
+}
+.review-total {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #2a2a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.review-total .review-label {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: #f0f0ea;
+  font-size: 0.85rem;
+}
+.review-total .review-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #d4a017;
+}
+
+/* Payment mock */
+.payment-section {
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+.payment-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f0f0ea;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.payment-title svg { color: #888; }
+.payment-cards-strip {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.payment-card-icon {
+  width: 36px;
+  height: 24px;
+  border-radius: 4px;
+  background: #222;
+  border: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #888;
+  font-family: 'Montserrat', sans-serif;
+}
+.payment-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Buttons */
+.booking-footer {
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid #1e1e1e;
+  display: flex;
+  gap: 10px;
+}
+.booking-btn {
+  flex: 1;
+  padding: 0.85rem 1.5rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.booking-btn:hover { transform: translateY(-1px); }
+.booking-btn:active { transform: translateY(0); }
+
+.booking-btn-back {
+  background: #1a1a1a;
+  color: #888;
+  border: 1px solid #2a2a2a;
+  flex: 0;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.booking-btn-back:hover { color: #f0f0ea; border-color: #444; }
+
+.booking-btn-next {
+  background: #d4a017;
+  color: #0a0a0a;
+}
+.booking-btn-next:hover { background: #f0b429; }
+.booking-btn-next:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.booking-btn-pay {
+  background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+  color: #0a0a0a;
+  width: 100%;
+  padding: 1rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-top: 1rem;
+}
+.booking-btn-pay:hover { background: linear-gradient(135deg, #f0b429 0%, #d4a017 100%); }
+
+/* Loading spinner */
+.pay-loading {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  gap: 1.5rem;
+}
+.pay-loading.active { display: flex; }
+.pay-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #1e1e1e;
+  border-top-color: #d4a017;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.pay-loading-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #888;
+}
+
+/* Confirmation */
+.confirmation {
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+.confirm-check {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(212,160,23,0.12);
+  border: 2px solid #d4a017;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+.confirm-check svg {
+  width: 28px;
+  height: 28px;
+  color: #d4a017;
+}
+.confirm-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f0f0ea;
+  margin-bottom: 0.5rem;
+}
+.confirm-subtitle {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 1.5rem;
+}
+.confirm-id {
+  display: inline-block;
+  background: rgba(212,160,23,0.1);
+  border: 1px solid rgba(212,160,23,0.25);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #d4a017;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+}
+.confirm-details {
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+.confirm-details .review-row {
+  padding: 0.4rem 0;
+}
+.confirm-whatsapp-note {
+  font-size: 0.8rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+.confirm-whatsapp-note svg { color: #25d366; flex-shrink: 0; }
+.booking-btn-done {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  color: #f0f0ea;
+  padding: 0.85rem 2rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.booking-btn-done:hover { border-color: #d4a017; color: #d4a017; }
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 600px) {
+  .booking-modal {
+    max-height: 95vh;
+    border-radius: 12px 12px 0 0;
+    max-width: 100%;
+  }
+  .booking-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .vehicle-options {
+    grid-template-columns: 1fr;
+  }
+  .time-slots {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .payment-row {
+    grid-template-columns: 1fr;
+  }
+  .step-title {
+    font-size: 1.1rem;
+  }
+}
