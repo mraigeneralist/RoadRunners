@@ -1,11 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 const path = require('path');
 const { google } = require('googleapis');
+const Razorpay = require('razorpay');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const TEST_MODE = process.env.TEST_MODE === 'true';
 
 // Google Sheets auth (service account)
 const auth = new google.auth.GoogleAuth({
@@ -20,9 +23,11 @@ const sheets = google.sheets({ version: 'v4', auth });
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SHEET_RANGE = 'Sheet1';
 
-// Column order: A=Booking ID, B=Customer Name, C=Phone Number, D=Vehicle Number,
-//               E=Service, F=Vehicle Type, G=Price, H=Booking Date,
-//               I=Time Slot, J=Notes, K=Status, L=Created At
+// Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 app.use(cors());
 app.use(express.json());
@@ -42,11 +47,15 @@ async function getAllRows() {
   return res.data.values || [];
 }
 
+// Expose Razorpay key ID to frontend (public key, safe to expose)
+app.get('/api/config', (req, res) => {
+  res.json({ razorpayKeyId: process.env.RAZORPAY_KEY_ID });
+});
+
 // Get booked slots for a specific date
 app.get('/api/slots/:date', async (req, res) => {
   try {
     const rows = await getAllRows();
-    // H = index 7 (Booking Date), I = index 8 (Time Slot), K = index 10 (Status)
     const bookedSlots = rows
       .filter(r => r[7] === req.params.date && (r[10] || 'confirmed') !== 'cancelled')
       .map(r => r[8]);
@@ -57,8 +66,8 @@ app.get('/api/slots/:date', async (req, res) => {
   }
 });
 
-// Create a booking
-app.post('/api/bookings', async (req, res) => {
+// Step 1: Create Razorpay order
+app.post('/api/create-order', async (req, res) => {
   const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes } = req.body;
 
   if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone || !vehicleNumber) {
@@ -66,7 +75,7 @@ app.post('/api/bookings', async (req, res) => {
   }
 
   try {
-    // Check if slot is already taken
+    // Check if slot is already taken before creating order
     const rows = await getAllRows();
     const slotTaken = rows.some(
       r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
@@ -76,10 +85,76 @@ app.post('/api/bookings', async (req, res) => {
       return res.status(409).json({ error: 'This time slot is already booked' });
     }
 
-    const bookingId = generateBookingId();
+    // In test mode, charge ₹1 (100 paise) instead of full price
+    const amountInPaise = TEST_MODE ? 100 : price * 100;
+
+    const order = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: generateBookingId(),
+      notes: {
+        service,
+        vehicleType,
+        date,
+        timeSlot,
+        customerName: name,
+        customerPhone: phone,
+        vehicleNumber,
+        actualPrice: String(price),
+        bookingNotes: notes || '',
+      }
+    });
+
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      bookingId: order.receipt,
+    });
+  } catch (err) {
+    console.error('Error creating Razorpay order:', err.message);
+    res.status(500).json({ error: 'Failed to create payment order' });
+  }
+});
+
+// Step 2: Verify payment and save booking
+app.post('/api/verify-payment', async (req, res) => {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    bookingId,
+    service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes
+  } = req.body;
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ error: 'Missing payment verification fields' });
+  }
+
+  // Verify signature
+  const expectedSignature = crypto
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest('hex');
+
+  if (expectedSignature !== razorpay_signature) {
+    return res.status(400).json({ error: 'Payment verification failed' });
+  }
+
+  // Payment is verified — save to Google Sheets
+  try {
+    // Double-check slot isn't taken (race condition guard)
+    const rows = await getAllRows();
+    const slotTaken = rows.some(
+      r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
+    );
+
+    if (slotTaken) {
+      return res.status(409).json({ error: 'This time slot was just booked by someone else. Your payment will be refunded.' });
+    }
+
     const createdAt = new Date().toISOString();
 
-    // Append row to Google Sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
       range: `${SHEET_RANGE}!A:L`,
@@ -125,8 +200,8 @@ app.post('/api/bookings', async (req, res) => {
 
     res.json({ success: true, booking });
   } catch (err) {
-    console.error('Error creating booking:', err.message);
-    res.status(500).json({ error: 'Failed to create booking' });
+    console.error('Error saving booking:', err.message);
+    res.status(500).json({ error: 'Payment verified but failed to save booking. Please contact support.' });
   }
 });
 
@@ -148,7 +223,6 @@ async function sendWhatsAppNotifications(booking) {
     'Content-Type': 'application/json'
   };
 
-  // Template 1: Customer confirmation
   const customerPayload = {
     messaging_product: 'whatsapp',
     to: booking.phone,
@@ -173,7 +247,6 @@ async function sendWhatsAppNotifications(booking) {
     }
   };
 
-  // Template 2: Owner alert
   const ownerPayload = {
     messaging_product: 'whatsapp',
     to: ownerNumber,
@@ -223,4 +296,5 @@ async function sendWhatsAppNotifications(booking) {
 
 app.listen(PORT, () => {
   console.log(`RoadRunners server running at http://localhost:${PORT}`);
+  if (TEST_MODE) console.log('⚠ TEST MODE: Razorpay orders will be created for ₹1 instead of actual price');
 });

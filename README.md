@@ -7,7 +7,7 @@ Live site: https://road-runners.vercel.app/
 ## Features
 
 - Full responsive website (homepage, services, packages, gallery, about, contact)
-- **Online Booking System** — multi-step booking flow with service selection, date/time picker, customer details, mock payment, and confirmation
+- **Online Booking System** — multi-step booking flow with service selection, date/time picker, customer details, Razorpay payment, and confirmation
 - **Google Sheets Database** — every booking is saved as a row in a Google Sheet (Dinesh can view/manage bookings directly in Google Sheets)
 - **WhatsApp Notifications** via Meta Business API — sends booking confirmations to both the customer and the business owner
 - Slot availability management — queries the sheet to prevent double-booking
@@ -83,6 +83,9 @@ cp .env.example .env
 | `GOOGLE_SHEET_ID` | The ID from your Google Sheet URL |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | `client_email` from the service account JSON |
 | `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | `private_key` from the service account JSON (keep the quotes, keep the `\n`) |
+| `RAZORPAY_KEY_ID` | Your Razorpay Key ID (starts with `rzp_test_` or `rzp_live_`) |
+| `RAZORPAY_KEY_SECRET` | Your Razorpay Key Secret |
+| `TEST_MODE` | Set to `true` to charge only ₹1 instead of actual price (for testing) |
 | `META_WHATSAPP_TOKEN` | Permanent access token from Meta Developer Console |
 | `META_PHONE_NUMBER_ID` | Phone Number ID from your WhatsApp Business App |
 | `META_WHATSAPP_BUSINESS_ACCOUNT_ID` | Your WhatsApp Business Account ID |
@@ -96,6 +99,24 @@ npm start
 ```
 
 Then open http://localhost:3000
+
+## Razorpay Setup
+
+Payments are processed through [Razorpay](https://razorpay.com/).
+
+1. Create a Razorpay account at [dashboard.razorpay.com](https://dashboard.razorpay.com/)
+2. Go to **Settings > API Keys**
+3. Generate a new key pair — you'll get a **Key ID** and **Key Secret**
+4. For testing, use the **Test mode** keys (they start with `rzp_test_`)
+5. Set `TEST_MODE=true` in your `.env` to charge only ₹1 during development
+6. When going live, switch to **Live mode** keys (`rzp_live_`) and set `TEST_MODE=false`
+
+**Payment flow:**
+1. Server creates a Razorpay order with the booking amount
+2. Frontend opens the Razorpay checkout popup (prefilled with customer name & phone)
+3. After payment, Razorpay returns `payment_id`, `order_id`, and `signature`
+4. Server verifies the signature using HMAC SHA256 with the key secret
+5. Only after verification: booking is saved to Google Sheets and WhatsApp notifications are sent
 
 ## WhatsApp Business API Setup
 

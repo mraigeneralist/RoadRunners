@@ -179,6 +179,8 @@
         const vt = VEHICLE_TYPES.find(v => v.id === opt.dataset.vehicle);
         state.vehicleType = vt;
         state.price = state.service.prices[vt.id];
+        body.querySelectorAll('.vehicle-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
         renderFooter1();
       });
     });
@@ -205,24 +207,95 @@
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const minDate = tomorrow.toISOString().split('T')[0];
-    const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate()).toISOString().split('T')[0];
+    const minDate = tomorrow;
+    const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
 
-    body.innerHTML = `
-      <div class="step-label">Step 2 of 5</div>
-      <div class="step-title">Select a Date</div>
-      <div class="date-input-wrap">
-        <input type="date" id="booking-date" min="${minDate}" max="${maxDate}" value="${state.date || ''}">
-      </div>
-    `;
+    // Determine which month to show
+    let viewDate;
+    if (state.date) {
+      const parts = state.date.split('-');
+      viewDate = new Date(+parts[0], +parts[1] - 1, 1);
+    } else {
+      viewDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
+    }
 
-    const dateInput = document.getElementById('booking-date');
-    dateInput.addEventListener('change', (e) => {
-      state.date = e.target.value;
-      state.timeSlot = null;
-      renderFooter2();
-    });
+    function buildCalendar(viewYear, viewMonth) {
+      const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+      const canPrev = new Date(viewYear, viewMonth, 0) >= minDate;
+      const canNext = new Date(viewYear, viewMonth + 1, 1) <= maxDate;
+
+      let html = `
+        <div class="step-label">Step 2 of 5</div>
+        <div class="step-title">Select a Date</div>
+        <div class="cal">
+          <div class="cal-header">
+            <button class="cal-nav ${canPrev ? '' : 'disabled'}" id="cal-prev">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="cal-month">${monthNames[viewMonth]} ${viewYear}</div>
+            <button class="cal-nav ${canNext ? '' : 'disabled'}" id="cal-next">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div class="cal-grid">
+            <div class="cal-day-label">Su</div><div class="cal-day-label">Mo</div><div class="cal-day-label">Tu</div>
+            <div class="cal-day-label">We</div><div class="cal-day-label">Th</div><div class="cal-day-label">Fr</div><div class="cal-day-label">Sa</div>
+      `;
+
+      for (let i = 0; i < firstDay; i++) {
+        html += '<div class="cal-cell empty"></div>';
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cellDate = new Date(viewYear, viewMonth, d);
+        const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isDisabled = cellDate < minDate || cellDate > maxDate;
+        const isSelected = state.date === dateStr;
+        const isToday = cellDate.toDateString() === today.toDateString();
+        let cls = 'cal-cell';
+        if (isDisabled) cls += ' disabled';
+        if (isSelected) cls += ' selected';
+        if (isToday) cls += ' today';
+        html += `<div class="${cls}" data-date="${dateStr}">${d}</div>`;
+      }
+
+      html += '</div></div>';
+      return html;
+    }
+
+    body.innerHTML = buildCalendar(viewDate.getFullYear(), viewDate.getMonth());
+
+    function attachEvents() {
+      const prevBtn = document.getElementById('cal-prev');
+      const nextBtn = document.getElementById('cal-next');
+      if (prevBtn && !prevBtn.classList.contains('disabled')) {
+        prevBtn.addEventListener('click', () => {
+          viewDate.setMonth(viewDate.getMonth() - 1);
+          body.innerHTML = buildCalendar(viewDate.getFullYear(), viewDate.getMonth());
+          attachEvents();
+        });
+      }
+      if (nextBtn && !nextBtn.classList.contains('disabled')) {
+        nextBtn.addEventListener('click', () => {
+          viewDate.setMonth(viewDate.getMonth() + 1);
+          body.innerHTML = buildCalendar(viewDate.getFullYear(), viewDate.getMonth());
+          attachEvents();
+        });
+      }
+      body.querySelectorAll('.cal-cell:not(.disabled):not(.empty)').forEach(cell => {
+        cell.addEventListener('click', () => {
+          state.date = cell.dataset.date;
+          state.timeSlot = null;
+          body.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+          cell.classList.add('selected');
+          renderFooter2();
+        });
+      });
+    }
+    attachEvents();
     renderFooter2();
   }
 
@@ -344,13 +417,35 @@
   }
 
   // ── STEP 5: Review & Payment ──
+  let razorpayKeyId = null;
+
+  async function fetchRazorpayKey() {
+    if (razorpayKeyId) return razorpayKeyId;
+    try {
+      const res = await fetch(`${API_BASE}/api/config`);
+      const data = await res.json();
+      razorpayKeyId = data.razorpayKeyId;
+      return razorpayKeyId;
+    } catch {
+      return null;
+    }
+  }
+
   function renderStep5() {
     const body = document.getElementById('booking-body');
     const formattedDate = formatDate(state.date);
     body.innerHTML = `
       <div id="step5-content">
-        <div class="step-label">Step 5 of 5</div>
-        <div class="step-title">Review & Pay</div>
+        <div class="step5-top-row">
+          <div>
+            <div class="step-label">Step 5 of 5</div>
+            <div class="step-title" style="margin-bottom:0">Review & Pay</div>
+          </div>
+          <button class="step5-back-link" id="btn-back-5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            Edit Details
+          </button>
+        </div>
         <div class="review-summary">
           <div class="review-row">
             <span class="review-label">Service</span>
@@ -386,112 +481,130 @@
           </div>
         </div>
 
-        <div class="payment-section">
-          <div class="payment-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Pay with Card
-          </div>
-          <div class="payment-cards-strip">
-            <div class="payment-card-icon">VISA</div>
-            <div class="payment-card-icon">MC</div>
-            <div class="payment-card-icon">RUPAY</div>
-            <div class="payment-card-icon">UPI</div>
-          </div>
-          <div class="form-group">
-            <label>Card Number</label>
-            <input type="text" id="pay-card" placeholder="1234 5678 9012 3456" maxlength="19">
-          </div>
-          <div class="payment-row">
-            <div class="form-group">
-              <label>Expiry</label>
-              <input type="text" id="pay-expiry" placeholder="MM/YY" maxlength="5">
-            </div>
-            <div class="form-group">
-              <label>CVV</label>
-              <input type="password" id="pay-cvv" placeholder="&bull;&bull;&bull;" maxlength="4">
-            </div>
-          </div>
-          <button class="booking-btn booking-btn-pay" id="btn-pay">
-            Pay \u20B9${state.price.toLocaleString('en-IN')}
-          </button>
-        </div>
+        <button class="booking-btn booking-btn-pay" id="btn-pay">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Pay \u20B9${state.price.toLocaleString('en-IN')}
+        </button>
       </div>
 
       <div class="pay-loading" id="pay-loading">
         <div class="pay-spinner"></div>
-        <div class="pay-loading-text">Processing payment...</div>
+        <div class="pay-loading-text">Creating order...</div>
       </div>
     `;
 
-    // Card number formatting
-    const cardEl = document.getElementById('pay-card');
-    cardEl.addEventListener('input', (e) => {
-      let v = e.target.value.replace(/\D/g, '').substring(0, 16);
-      e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
-    });
-
-    const expiryEl = document.getElementById('pay-expiry');
-    expiryEl.addEventListener('input', (e) => {
-      let v = e.target.value.replace(/\D/g, '').substring(0, 4);
-      if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2);
-      e.target.value = v;
-    });
-
-    document.getElementById('btn-pay').addEventListener('click', processPayment);
-
-    const footer = document.getElementById('booking-footer');
-    footer.innerHTML = `
-      <button class="booking-btn booking-btn-back" id="btn-back-5"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
-      <div style="flex:1"></div>
-    `;
+    document.getElementById('btn-pay').addEventListener('click', initiatePayment);
+    document.getElementById('booking-footer').innerHTML = '';
     document.getElementById('btn-back-5').addEventListener('click', () => { state.step = 4; render(); });
   }
 
-  async function processPayment() {
+  async function initiatePayment() {
     const content = document.getElementById('step5-content');
     const loading = document.getElementById('pay-loading');
-    const footer = document.getElementById('booking-footer');
 
     content.style.display = 'none';
     loading.classList.add('active');
-    footer.innerHTML = '';
 
-    // Simulate payment delay
-    await new Promise(r => setTimeout(r, 2000));
+    const bookingData = {
+      service: state.service.name,
+      vehicleType: state.vehicleType.name,
+      price: state.price,
+      date: state.date,
+      timeSlot: state.timeSlot,
+      name: state.name,
+      phone: '91' + state.phone,
+      vehicleNumber: state.vehicleNumber,
+      notes: state.notes
+    };
 
-    loading.querySelector('.pay-loading-text').textContent = 'Confirming booking...';
-
-    // Create the booking
     try {
-      const res = await fetch(`${API_BASE}/api/bookings`, {
+      // 1. Fetch Razorpay key
+      const keyId = await fetchRazorpayKey();
+      if (!keyId) throw new Error('Could not load payment config');
+
+      // 2. Create order on server
+      const orderRes = await fetch(`${API_BASE}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          service: state.service.name,
-          vehicleType: state.vehicleType.name,
-          price: state.price,
-          date: state.date,
-          timeSlot: state.timeSlot,
-          name: state.name,
-          phone: '91' + state.phone,
-          vehicleNumber: state.vehicleNumber,
-          notes: state.notes
-        })
+        body: JSON.stringify(bookingData)
       });
-      const data = await res.json();
-      if (data.success) {
-        state.booking = data.booking;
-        state.step = 6;
-        render();
-      } else {
-        alert(data.error || 'Booking failed. Please try again.');
-        content.style.display = '';
-        loading.classList.remove('active');
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok) {
+        throw new Error(orderData.error || 'Failed to create order');
       }
-    } catch (err) {
-      alert('Network error. Please check your connection and try again.');
-      content.style.display = '';
+
+      // Hide loading before opening Razorpay
       loading.classList.remove('active');
+      content.style.display = '';
+
+      // 3. Open Razorpay checkout
+      const options = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Road Runners Auto Detailing',
+        description: `${state.service.name} — ${state.vehicleType.name}`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: state.name,
+          contact: state.phone,
+        },
+        theme: {
+          color: '#d4a017',
+        },
+        handler: async function (response) {
+          // Payment succeeded — verify on server
+          content.style.display = 'none';
+          loading.classList.add('active');
+          loading.querySelector('.pay-loading-text').textContent = 'Verifying payment...';
+
+          try {
+            const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                bookingId: orderData.bookingId,
+                ...bookingData
+              })
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              state.booking = verifyData.booking;
+              state.step = 6;
+              render();
+            } else {
+              alert(verifyData.error || 'Payment verification failed.');
+              loading.classList.remove('active');
+              content.style.display = '';
+            }
+          } catch {
+            alert('Network error during verification. Please contact support.');
+            loading.classList.remove('active');
+            content.style.display = '';
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            // User closed Razorpay popup without paying
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        alert('Payment failed: ' + (response.error.description || 'Please try again.'));
+      });
+      rzp.open();
+
+    } catch (err) {
+      alert(err.message || 'Something went wrong. Please try again.');
+      loading.classList.remove('active');
+      content.style.display = '';
     }
   }
 

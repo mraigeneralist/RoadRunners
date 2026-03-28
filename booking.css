@@ -1,4 +1,7 @@
 /* ── BOOKING MODAL ─────────────────────────── */
+.booking-overlay *, .booking-overlay *::before, .booking-overlay *::after {
+  box-sizing: border-box;
+}
 .booking-overlay {
   position: fixed;
   inset: 0;
@@ -181,29 +184,94 @@
   color: #d4a017;
 }
 
-/* Date picker */
-.date-input-wrap {
-  position: relative;
+/* Custom calendar */
+.cal {
+  margin-top: 0.5rem;
 }
-.date-input-wrap input[type="date"] {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  background: #151515;
-  border: 1px solid #1e1e1e;
-  border-radius: 8px;
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.cal-month {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #f0f0ea;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.25s ease;
-  -webkit-appearance: none;
+  letter-spacing: 0.03em;
 }
-.date-input-wrap input[type="date"]:focus {
-  border-color: #d4a017;
-}
-.date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6) sepia(1) hue-rotate(5deg) brightness(1.2);
+.cal-nav {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  color: #999;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+.cal-nav:hover:not(.disabled) {
+  border-color: #d4a017;
+  color: #f0f0ea;
+  background: rgba(212,160,23,0.08);
+}
+.cal-nav.disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-day-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.5rem;
+}
+.cal-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
+}
+.cal-cell.empty {
+  cursor: default;
+}
+.cal-cell.disabled {
+  color: #333;
+  cursor: not-allowed;
+}
+.cal-cell:not(.disabled):not(.empty):hover {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+}
+.cal-cell.today:not(.selected) {
+  color: #d4a017;
+  font-weight: 700;
+}
+.cal-cell.selected {
+  background: #d4a017;
+  color: #0a0a0a;
+  font-weight: 700;
+  border-color: #d4a017;
 }
 
 /* Time slots */
@@ -330,48 +398,37 @@
   color: #d4a017;
 }
 
-/* Payment mock */
-.payment-section {
-  background: #151515;
-  border: 1px solid #1e1e1e;
-  border-radius: 8px;
-  padding: 1.25rem;
-}
-.payment-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #f0f0ea;
-  margin-bottom: 1rem;
+/* Step 5 back link */
+.step5-top-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
 }
-.payment-title svg { color: #888; }
-.payment-cards-strip {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 1rem;
-}
-.payment-card-icon {
-  width: 36px;
-  height: 24px;
-  border-radius: 4px;
-  background: #222;
+.step5-back-link {
+  background: transparent;
   border: 1px solid #2a2a2a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.55rem;
-  font-weight: 700;
+  border-radius: 6px;
   color: #888;
   font-family: 'Montserrat', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  white-space: nowrap;
 }
-.payment-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.step5-back-link:hover {
+  color: #f0f0ea;
+  border-color: #d4a017;
+  background: rgba(212,160,23,0.08);
 }
+
+/* Payment */
 
 /* Buttons */
 .booking-footer {
@@ -562,9 +619,6 @@
   }
   .time-slots {
     grid-template-columns: repeat(3, 1fr);
-  }
-  .payment-row {
-    grid-template-columns: 1fr;
   }
   .step-title {
     font-size: 1.1rem;
