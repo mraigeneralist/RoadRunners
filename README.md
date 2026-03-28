@@ -11,12 +11,14 @@ Live site: https://road-runners.vercel.app/
 - **Admin Dashboard** at `/admin` — view all bookings in a sortable table with stats
 - **WhatsApp Notifications** via Meta Business API — sends booking confirmations to both the customer and the business owner
 - Slot availability management (prevents double-booking)
+- **Supabase** database for persistent booking storage
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
+- A [Supabase](https://supabase.com/) project (free tier works fine)
 
 ### Installation
 
@@ -25,6 +27,42 @@ git clone https://github.com/mraigeneralist/RoadRunners.git
 cd RoadRunners
 npm install
 ```
+
+### Supabase Setup
+
+1. Create a new project at [supabase.com](https://supabase.com/)
+2. Go to **SQL Editor** and run the following to create the `bookings` table:
+
+```sql
+create table bookings (
+  id uuid primary key default gen_random_uuid(),
+  booking_id text unique not null,
+  customer_name text not null,
+  customer_phone text not null,
+  vehicle_number text not null,
+  service text not null,
+  vehicle_type text not null,
+  price integer not null,
+  booking_date date not null,
+  time_slot text not null,
+  notes text,
+  status text not null default 'confirmed',
+  created_at timestamptz not null default now()
+);
+
+-- Index for fast slot availability lookups
+create index idx_bookings_date_slot on bookings (booking_date, time_slot)
+  where status != 'cancelled';
+
+-- Enable Row Level Security (recommended)
+alter table bookings enable row level security;
+
+-- Policy: allow the anon key to insert and read (used by the Express server)
+create policy "Allow insert" on bookings for insert with check (true);
+create policy "Allow select" on bookings for select using (true);
+```
+
+3. Go to **Settings > API** and copy your **Project URL** and **anon (public) key**
 
 ### Environment Variables
 
@@ -36,6 +74,8 @@ cp .env.example .env
 
 | Variable | Description |
 |---|---|
+| `SUPABASE_URL` | Your Supabase project URL (e.g., `https://abc123.supabase.co`) |
+| `SUPABASE_ANON_KEY` | Your Supabase anon/public key |
 | `META_WHATSAPP_TOKEN` | Permanent access token from Meta Developer Console |
 | `META_PHONE_NUMBER_ID` | Phone Number ID from your WhatsApp Business App |
 | `META_WHATSAPP_BUSINESS_ACCOUNT_ID` | Your WhatsApp Business Account ID |
@@ -122,7 +162,7 @@ Parameters (in order):
 ## Project Structure
 
 ```
-├── server.js          # Express server (API + static file serving)
+├── server.js          # Express server (API + Supabase queries + static files)
 ├── index.html         # Homepage with integrated booking modal
 ├── booking.js         # Booking flow JavaScript (multi-step form)
 ├── booking.css        # Booking modal styles
@@ -133,8 +173,6 @@ Parameters (in order):
 ├── gallery.html       # Gallery page
 ├── contact.html       # Contact page
 ├── images/            # Site images
-├── data/              # Bookings storage (auto-created)
-│   └── bookings.json  # JSON file database
 ├── .env.example       # Environment variables template
 └── package.json
 ```

@@ -1,29 +1,21 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
-const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
+
+// Supabase client (server-side only — uses anon key, never exposed to frontend)
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
-
-// Ensure data directory and bookings file exist
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-if (!fs.existsSync(BOOKINGS_FILE)) fs.writeFileSync(BOOKINGS_FILE, '[]');
-
-function readBookings() {
-  return JSON.parse(fs.readFileSync(BOOKINGS_FILE, 'utf8'));
-}
-
-function writeBookings(bookings) {
-  fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
-}
 
 function generateBookingId() {
   const year = new Date().getFullYear();
@@ -32,12 +24,22 @@ function generateBookingId() {
 }
 
 // Get booked slots for a specific date
-app.get('/api/slots/:date', (req, res) => {
-  const bookings = readBookings();
-  const bookedSlots = bookings
-    .filter(b => b.date === req.params.date && b.status !== 'cancelled')
-    .map(b => b.timeSlot);
-  res.json({ bookedSlots });
+app.get('/api/slots/:date', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('time_slot')
+      .eq('booking_date', req.params.date)
+      .neq('status', 'cancelled');
+
+    if (error) throw error;
+
+    const bookedSlots = data.map(b => b.time_slot);
+    res.json({ bookedSlots });
+  } catch (err) {
+    console.error('Error fetching slots:', err.message);
+    res.status(500).json({ error: 'Failed to fetch available slots' });
+  }
 });
 
 // Create a booking
@@ -48,49 +50,104 @@ app.post('/api/bookings', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const bookings = readBookings();
+  try {
+    // Check if slot is already taken
+    const { data: existing, error: checkError } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('booking_date', date)
+      .eq('time_slot', timeSlot)
+      .neq('status', 'cancelled')
+      .limit(1);
 
-  // Check if slot is already taken
-  const slotTaken = bookings.some(b => b.date === date && b.timeSlot === timeSlot && b.status !== 'cancelled');
-  if (slotTaken) {
-    return res.status(409).json({ error: 'This time slot is already booked' });
+    if (checkError) throw checkError;
+
+    if (existing && existing.length > 0) {
+      return res.status(409).json({ error: 'This time slot is already booked' });
+    }
+
+    const bookingId = generateBookingId();
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert({
+        booking_id: bookingId,
+        customer_name: name,
+        customer_phone: phone,
+        vehicle_number: vehicleNumber,
+        service,
+        vehicle_type: vehicleType,
+        price,
+        booking_date: date,
+        time_slot: timeSlot,
+        notes: notes || null,
+        status: 'confirmed'
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Map to the shape the frontend expects
+    const booking = {
+      id: data.booking_id,
+      service: data.service,
+      vehicleType: data.vehicle_type,
+      price: data.price,
+      date: data.booking_date,
+      timeSlot: data.time_slot,
+      name: data.customer_name,
+      phone: data.customer_phone,
+      vehicleNumber: data.vehicle_number,
+      notes: data.notes || '',
+      status: data.status,
+      createdAt: data.created_at
+    };
+
+    // Send WhatsApp notifications (non-blocking)
+    sendWhatsAppNotifications(booking).catch(err => {
+      console.error('WhatsApp notification error:', err.message);
+    });
+
+    res.json({ success: true, booking });
+  } catch (err) {
+    console.error('Error creating booking:', err.message);
+    res.status(500).json({ error: 'Failed to create booking' });
   }
-
-  const booking = {
-    id: generateBookingId(),
-    service,
-    vehicleType,
-    price,
-    date,
-    timeSlot,
-    name,
-    phone,
-    vehicleNumber,
-    notes: notes || '',
-    status: 'confirmed',
-    createdAt: new Date().toISOString()
-  };
-
-  bookings.push(booking);
-  writeBookings(bookings);
-
-  // Send WhatsApp notifications (non-blocking)
-  sendWhatsAppNotifications(booking).catch(err => {
-    console.error('WhatsApp notification error:', err.message);
-  });
-
-  res.json({ success: true, booking });
 });
 
 // Get all bookings (for admin)
-app.get('/api/bookings', (req, res) => {
-  const bookings = readBookings();
-  // Sort by date ascending, then by time
-  bookings.sort((a, b) => {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return a.timeSlot.localeCompare(b.timeSlot);
-  });
-  res.json({ bookings });
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .order('booking_date', { ascending: true })
+      .order('time_slot', { ascending: true });
+
+    if (error) throw error;
+
+    // Map to the shape the frontend expects
+    const bookings = data.map(b => ({
+      id: b.booking_id,
+      service: b.service,
+      vehicleType: b.vehicle_type,
+      price: b.price,
+      date: b.booking_date,
+      timeSlot: b.time_slot,
+      name: b.customer_name,
+      phone: b.customer_phone,
+      vehicleNumber: b.vehicle_number,
+      notes: b.notes || '',
+      status: b.status,
+      createdAt: b.created_at
+    }));
+
+    res.json({ bookings });
+  } catch (err) {
+    console.error('Error fetching bookings:', err.message);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
 });
 
 // Serve admin page
