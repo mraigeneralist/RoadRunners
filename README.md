@@ -1,6 +1,6 @@
 # RoadRunners Auto Detailing — Website + Booking System
 
-Car detailing business website for **RoadRunners Auto Detailing**, Avadi, Chennai. Includes an integrated online booking system with WhatsApp notifications.
+Car detailing business website for **RoadRunners Auto Detailing**, Avadi, Chennai. Includes an integrated online booking system with WhatsApp notifications and Google Sheets as the database.
 
 Live site: https://road-runners.vercel.app/
 
@@ -8,17 +8,17 @@ Live site: https://road-runners.vercel.app/
 
 - Full responsive website (homepage, services, packages, gallery, about, contact)
 - **Online Booking System** — multi-step booking flow with service selection, date/time picker, customer details, mock payment, and confirmation
-- **Admin Dashboard** at `/admin` — view all bookings in a sortable table with stats
+- **Google Sheets Database** — every booking is saved as a row in a Google Sheet (Dinesh can view/manage bookings directly in Google Sheets)
 - **WhatsApp Notifications** via Meta Business API — sends booking confirmations to both the customer and the business owner
-- Slot availability management (prevents double-booking)
-- **Supabase** database for persistent booking storage
+- Slot availability management — queries the sheet to prevent double-booking
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- A [Supabase](https://supabase.com/) project (free tier works fine)
+- A Google account
+- A Google Cloud project with the Sheets API enabled
 
 ### Installation
 
@@ -28,43 +28,49 @@ cd RoadRunners
 npm install
 ```
 
-### Supabase Setup
+## Google Sheets Setup
 
-1. Create a new project at [supabase.com](https://supabase.com/)
-2. Go to **SQL Editor** and run the following to create the `bookings` table:
+### Step 1: Create the Google Sheet
 
-```sql
-create table bookings (
-  id uuid primary key default gen_random_uuid(),
-  booking_id text unique not null,
-  customer_name text not null,
-  customer_phone text not null,
-  vehicle_number text not null,
-  service text not null,
-  vehicle_type text not null,
-  price integer not null,
-  booking_date date not null,
-  time_slot text not null,
-  notes text,
-  status text not null default 'confirmed',
-  created_at timestamptz not null default now()
-);
+1. Go to [Google Sheets](https://sheets.google.com/) and create a new blank spreadsheet
+2. Name it something like **"RoadRunners Bookings"**
+3. In **Row 1**, add these headers in order:
 
--- Index for fast slot availability lookups
-create index idx_bookings_date_slot on bookings (booking_date, time_slot)
-  where status != 'cancelled';
+| A | B | C | D | E | F | G | H | I | J | K | L |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Booking ID | Customer Name | Phone Number | Vehicle Number | Service | Vehicle Type | Price | Booking Date | Time Slot | Notes | Status | Created At |
 
--- Enable Row Level Security (recommended)
-alter table bookings enable row level security;
+4. Copy the **Sheet ID** from the URL — it's the long string between `/d/` and `/edit`:
+   ```
+   https://docs.google.com/spreadsheets/d/THIS_IS_YOUR_SHEET_ID/edit
+   ```
 
--- Policy: allow the anon key to insert and read (used by the Express server)
-create policy "Allow insert" on bookings for insert with check (true);
-create policy "Allow select" on bookings for select using (true);
-```
+### Step 2: Create a Google Service Account
 
-3. Go to **Settings > API** and copy your **Project URL** and **anon (public) key**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select an existing one)
+3. Go to **APIs & Services > Library**, search for **Google Sheets API**, and **enable** it
+4. Go to **APIs & Services > Credentials**
+5. Click **Create Credentials > Service Account**
+6. Give it a name (e.g., `roadrunners-sheets`) and click **Done**
+7. Click on the newly created service account
+8. Go to the **Keys** tab, click **Add Key > Create new key**
+9. Choose **JSON** and download the file
+10. From the JSON file, you need two values:
+    - `client_email` — this is your `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+    - `private_key` — this is your `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
 
-### Environment Variables
+### Step 3: Share the Sheet with the Service Account
+
+1. Open your Google Sheet
+2. Click **Share**
+3. Paste the service account email (e.g., `roadrunners-sheets@your-project.iam.gserviceaccount.com`)
+4. Give it **Editor** access
+5. Click **Send** (uncheck "Notify people" if prompted)
+
+This is required — without this step, the server cannot read or write to the sheet.
+
+## Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values:
 
@@ -74,8 +80,9 @@ cp .env.example .env
 
 | Variable | Description |
 |---|---|
-| `SUPABASE_URL` | Your Supabase project URL (e.g., `https://abc123.supabase.co`) |
-| `SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+| `GOOGLE_SHEET_ID` | The ID from your Google Sheet URL |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | `client_email` from the service account JSON |
+| `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | `private_key` from the service account JSON (keep the quotes, keep the `\n`) |
 | `META_WHATSAPP_TOKEN` | Permanent access token from Meta Developer Console |
 | `META_PHONE_NUMBER_ID` | Phone Number ID from your WhatsApp Business App |
 | `META_WHATSAPP_BUSINESS_ACCOUNT_ID` | Your WhatsApp Business Account ID |
@@ -89,10 +96,6 @@ npm start
 ```
 
 Then open http://localhost:3000
-
-### Admin Dashboard
-
-Visit http://localhost:3000/admin to see all bookings.
 
 ## WhatsApp Business API Setup
 
@@ -162,11 +165,10 @@ Parameters (in order):
 ## Project Structure
 
 ```
-├── server.js          # Express server (API + Supabase queries + static files)
+├── server.js          # Express server (API + Google Sheets + static files)
 ├── index.html         # Homepage with integrated booking modal
 ├── booking.js         # Booking flow JavaScript (multi-step form)
 ├── booking.css        # Booking modal styles
-├── admin.html         # Admin dashboard for viewing bookings
 ├── about.html         # About page
 ├── services.html      # Services page
 ├── packages.html      # Packages page

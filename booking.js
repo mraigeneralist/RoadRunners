@@ -229,7 +229,7 @@
   function renderFooter2() {
     const footer = document.getElementById('booking-footer');
     footer.innerHTML = `
-      <button class="booking-btn booking-btn-back" id="btn-back-2">&larr;</button>
+      <button class="booking-btn booking-btn-back" id="btn-back-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${state.date ? '' : 'disabled'} id="btn-next-2">Continue</button>
     `;
     document.getElementById('btn-back-2').addEventListener('click', () => { state.step = 1; render(); });
@@ -280,7 +280,7 @@
   function renderFooter3() {
     const footer = document.getElementById('booking-footer');
     footer.innerHTML = `
-      <button class="booking-btn booking-btn-back" id="btn-back-3">&larr;</button>
+      <button class="booking-btn booking-btn-back" id="btn-back-3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${state.timeSlot ? '' : 'disabled'} id="btn-next-3">Continue</button>
     `;
     document.getElementById('btn-back-3').addEventListener('click', () => { state.step = 2; render(); });
@@ -334,7 +334,7 @@
     const footer = document.getElementById('booking-footer');
     const valid = state.name && /^[6-9]\d{9}$/.test(state.phone) && state.vehicleNumber.length >= 4;
     footer.innerHTML = `
-      <button class="booking-btn booking-btn-back" id="btn-back-4">&larr;</button>
+      <button class="booking-btn booking-btn-back" id="btn-back-4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${valid ? '' : 'disabled'} id="btn-next-4">Review Booking</button>
     `;
     document.getElementById('btn-back-4').addEventListener('click', () => { state.step = 3; render(); });
@@ -441,7 +441,7 @@
 
     const footer = document.getElementById('booking-footer');
     footer.innerHTML = `
-      <button class="booking-btn booking-btn-back" id="btn-back-5">&larr;</button>
+      <button class="booking-btn booking-btn-back" id="btn-back-5"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <div style="flex:1"></div>
     `;
     document.getElementById('btn-back-5').addEventListener('click', () => { state.step = 4; render(); });

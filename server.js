@@ -2,16 +2,27 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
+const { google } = require('googleapis');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Supabase client (server-side only — uses anon key, never exposed to frontend)
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+// Google Sheets auth (service account)
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  },
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+});
+
+const sheets = google.sheets({ version: 'v4', auth });
+const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const SHEET_RANGE = 'Sheet1';
+
+// Column order: A=Booking ID, B=Customer Name, C=Phone Number, D=Vehicle Number,
+//               E=Service, F=Vehicle Type, G=Price, H=Booking Date,
+//               I=Time Slot, J=Notes, K=Status, L=Created At
 
 app.use(cors());
 app.use(express.json());
@@ -23,18 +34,22 @@ function generateBookingId() {
   return `RR-${year}-${rand}`;
 }
 
+async function getAllRows() {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_RANGE}!A2:L`,
+  });
+  return res.data.values || [];
+}
+
 // Get booked slots for a specific date
 app.get('/api/slots/:date', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('time_slot')
-      .eq('booking_date', req.params.date)
-      .neq('status', 'cancelled');
-
-    if (error) throw error;
-
-    const bookedSlots = data.map(b => b.time_slot);
+    const rows = await getAllRows();
+    // H = index 7 (Booking Date), I = index 8 (Time Slot), K = index 10 (Status)
+    const bookedSlots = rows
+      .filter(r => r[7] === req.params.date && (r[10] || 'confirmed') !== 'cancelled')
+      .map(r => r[8]);
     res.json({ bookedSlots });
   } catch (err) {
     console.error('Error fetching slots:', err.message);
@@ -52,56 +67,55 @@ app.post('/api/bookings', async (req, res) => {
 
   try {
     // Check if slot is already taken
-    const { data: existing, error: checkError } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('booking_date', date)
-      .eq('time_slot', timeSlot)
-      .neq('status', 'cancelled')
-      .limit(1);
+    const rows = await getAllRows();
+    const slotTaken = rows.some(
+      r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
+    );
 
-    if (checkError) throw checkError;
-
-    if (existing && existing.length > 0) {
+    if (slotTaken) {
       return res.status(409).json({ error: 'This time slot is already booked' });
     }
 
     const bookingId = generateBookingId();
+    const createdAt = new Date().toISOString();
 
-    const { data, error } = await supabase
-      .from('bookings')
-      .insert({
-        booking_id: bookingId,
-        customer_name: name,
-        customer_phone: phone,
-        vehicle_number: vehicleNumber,
-        service,
-        vehicle_type: vehicleType,
-        price,
-        booking_date: date,
-        time_slot: timeSlot,
-        notes: notes || null,
-        status: 'confirmed'
-      })
-      .select()
-      .single();
+    // Append row to Google Sheet
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: `${SHEET_RANGE}!A:L`,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [[
+          bookingId,
+          name,
+          phone,
+          vehicleNumber,
+          service,
+          vehicleType,
+          price,
+          date,
+          timeSlot,
+          notes || '',
+          'confirmed',
+          createdAt
+        ]]
+      }
+    });
 
-    if (error) throw error;
-
-    // Map to the shape the frontend expects
     const booking = {
-      id: data.booking_id,
-      service: data.service,
-      vehicleType: data.vehicle_type,
-      price: data.price,
-      date: data.booking_date,
-      timeSlot: data.time_slot,
-      name: data.customer_name,
-      phone: data.customer_phone,
-      vehicleNumber: data.vehicle_number,
-      notes: data.notes || '',
-      status: data.status,
-      createdAt: data.created_at
+      id: bookingId,
+      service,
+      vehicleType,
+      price,
+      date,
+      timeSlot,
+      name,
+      phone,
+      vehicleNumber,
+      notes: notes || '',
+      status: 'confirmed',
+      createdAt
     };
 
     // Send WhatsApp notifications (non-blocking)
@@ -114,45 +128,6 @@ app.post('/api/bookings', async (req, res) => {
     console.error('Error creating booking:', err.message);
     res.status(500).json({ error: 'Failed to create booking' });
   }
-});
-
-// Get all bookings (for admin)
-app.get('/api/bookings', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .order('booking_date', { ascending: true })
-      .order('time_slot', { ascending: true });
-
-    if (error) throw error;
-
-    // Map to the shape the frontend expects
-    const bookings = data.map(b => ({
-      id: b.booking_id,
-      service: b.service,
-      vehicleType: b.vehicle_type,
-      price: b.price,
-      date: b.booking_date,
-      timeSlot: b.time_slot,
-      name: b.customer_name,
-      phone: b.customer_phone,
-      vehicleNumber: b.vehicle_number,
-      notes: b.notes || '',
-      status: b.status,
-      createdAt: b.created_at
-    }));
-
-    res.json({ bookings });
-  } catch (err) {
-    console.error('Error fetching bookings:', err.message);
-    res.status(500).json({ error: 'Failed to fetch bookings' });
-  }
-});
-
-// Serve admin page
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 // WhatsApp notification via Meta Cloud API
