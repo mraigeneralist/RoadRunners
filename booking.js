@@ -90,6 +90,7 @@
   }
 
   function closeBooking() {
+    cleanupPaymentState();
     const overlay = document.getElementById('booking-overlay');
     overlay.classList.remove('active');
     setTimeout(() => {
@@ -418,6 +419,13 @@
 
   // ── STEP 5: Review & Payment ──
   let razorpayKeyId = null;
+  let activeRzpInstance = null;
+  let paymentPollInterval = null;
+  let activeQrCodeId = null;
+
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
 
   async function fetchRazorpayKey() {
     if (razorpayKeyId) return razorpayKeyId;
@@ -431,9 +439,116 @@
     }
   }
 
+  function stopPaymentPolling() {
+    if (paymentPollInterval) {
+      clearInterval(paymentPollInterval);
+      paymentPollInterval = null;
+    }
+  }
+
+  function startPaymentPolling(params) {
+    stopPaymentPolling();
+    paymentPollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/payment-status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        });
+        const data = await res.json();
+        if (data.status === 'paid') {
+          stopPaymentPolling();
+          activeQrCodeId = null;
+          state.booking = data.booking;
+          state.step = 6;
+          render();
+        }
+      } catch (e) {
+        // Silently retry on next interval
+      }
+    }, 3000);
+  }
+
+  function cleanupPaymentState() {
+    stopPaymentPolling();
+    if (activeQrCodeId) {
+      fetch(`${API_BASE}/api/close-qr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrCodeId: activeQrCodeId })
+      }).catch(() => {});
+      activeQrCodeId = null;
+    }
+    activeRzpInstance = null;
+  }
+
   function renderStep5() {
     const body = document.getElementById('booking-body');
     const formattedDate = formatDate(state.date);
+    const priceDisplay = state.price.toLocaleString('en-IN');
+    const mobile = isMobile();
+
+    // Build UPI panel based on device type
+    let upiPanelHtml;
+    if (mobile) {
+      // MOBILE: UPI ID input + app buttons
+      upiPanelHtml = `
+        <div class="pay-panel active" id="panel-upi">
+          <div class="form-group">
+            <label>UPI ID</label>
+            <input type="text" id="pay-upi-id" placeholder="yourname@okicici" autocomplete="off" spellcheck="false">
+          </div>
+          <button class="booking-btn booking-btn-pay" id="btn-pay-upi">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Pay \u20B9${priceDisplay}
+          </button>
+          <div class="upi-apps-divider"><span>or pay using app</span></div>
+          <div class="upi-apps-grid">
+            <button class="upi-app-btn" data-app="gpay">
+              <span class="upi-app-icon gpay">G</span>
+              <span>GPay</span>
+            </button>
+            <button class="upi-app-btn" data-app="phonepe">
+              <span class="upi-app-icon phonepe">P</span>
+              <span>PhonePe</span>
+            </button>
+            <button class="upi-app-btn" data-app="paytm">
+              <span class="upi-app-icon paytm">P</span>
+              <span>Paytm</span>
+            </button>
+            <button class="upi-app-btn" data-app="bhim">
+              <span class="upi-app-icon bhim">B</span>
+              <span>BHIM</span>
+            </button>
+          </div>
+          <div class="upi-apps-note">Opens UPI app on your phone</div>
+        </div>`;
+    } else {
+      // DESKTOP: QR code + UPI ID input (no app buttons)
+      upiPanelHtml = `
+        <div class="pay-panel active" id="panel-upi">
+          <div class="upi-qr-section" id="upi-qr-section">
+            <div class="upi-qr-title">Scan with any UPI app</div>
+            <div class="upi-qr-container" id="upi-qr-container">
+              <div class="upi-qr-loading">
+                <div class="pay-spinner" style="width:24px;height:24px;border-width:2px;"></div>
+                <span>Generating QR code...</span>
+              </div>
+            </div>
+            <div class="upi-qr-amount">\u20B9${priceDisplay}</div>
+          </div>
+          <div class="upi-apps-divider"><span>or enter UPI ID</span></div>
+          <div class="form-group">
+            <label>UPI ID</label>
+            <input type="text" id="pay-upi-id" placeholder="yourname@okicici" autocomplete="off" spellcheck="false">
+          </div>
+          <button class="booking-btn booking-btn-pay" id="btn-pay-upi">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Pay \u20B9${priceDisplay}
+          </button>
+        </div>`;
+    }
+
     body.innerHTML = `
       <div id="step5-content">
         <div class="step5-top-row">
@@ -452,58 +567,161 @@
             <span class="review-value">${state.service.name}</span>
           </div>
           <div class="review-row">
-            <span class="review-label">Vehicle Type</span>
+            <span class="review-label">Vehicle</span>
             <span class="review-value">${state.vehicleType.name}</span>
           </div>
           <div class="review-row">
-            <span class="review-label">Date</span>
-            <span class="review-value">${formattedDate}</span>
+            <span class="review-label">Date & Time</span>
+            <span class="review-value">${formattedDate}, ${state.timeSlot}</span>
           </div>
           <div class="review-row">
-            <span class="review-label">Time</span>
-            <span class="review-value">${state.timeSlot}</span>
-          </div>
-          <div class="review-row">
-            <span class="review-label">Name</span>
-            <span class="review-value">${escapeHtml(state.name)}</span>
-          </div>
-          <div class="review-row">
-            <span class="review-label">Phone</span>
-            <span class="review-value">+91 ${state.phone}</span>
-          </div>
-          <div class="review-row">
-            <span class="review-label">Vehicle</span>
-            <span class="review-value">${escapeHtml(state.vehicleNumber)}</span>
+            <span class="review-label">Customer</span>
+            <span class="review-value">${escapeHtml(state.name)} &middot; +91 ${state.phone}</span>
           </div>
           <div class="review-total">
             <span class="review-label">Total</span>
-            <span class="review-value">\u20B9${state.price.toLocaleString('en-IN')}</span>
+            <span class="review-value">\u20B9${priceDisplay}</span>
           </div>
         </div>
 
-        <button class="booking-btn booking-btn-pay" id="btn-pay">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-          Pay \u20B9${state.price.toLocaleString('en-IN')}
-        </button>
+        <div class="pay-method-tabs">
+          <button class="pay-method-tab active" data-tab="upi">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            UPI
+          </button>
+          <button class="pay-method-tab" data-tab="card">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Card
+          </button>
+        </div>
+
+        ${upiPanelHtml}
+
+        <div class="pay-panel" id="panel-card">
+          <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" id="pay-card-number" placeholder="1234 5678 9012 3456" maxlength="19" inputmode="numeric" autocomplete="cc-number">
+          </div>
+          <div class="card-fields-row">
+            <div class="form-group">
+              <label>Expiry</label>
+              <input type="text" id="pay-card-expiry" placeholder="MM / YY" maxlength="7" inputmode="numeric" autocomplete="cc-exp">
+            </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <input type="password" id="pay-card-cvv" placeholder="&#8226;&#8226;&#8226;" maxlength="4" inputmode="numeric" autocomplete="cc-csc">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Cardholder Name</label>
+            <input type="text" id="pay-card-name" placeholder="Name on card" autocomplete="cc-name">
+          </div>
+          <button class="booking-btn booking-btn-pay" id="btn-pay-card">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Pay \u20B9${priceDisplay}
+          </button>
+        </div>
+
+        <div class="pay-secure-note">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Secured by Razorpay
+        </div>
       </div>
 
       <div class="pay-loading" id="pay-loading">
         <div class="pay-spinner"></div>
-        <div class="pay-loading-text">Creating order...</div>
+        <div class="pay-loading-text" id="pay-loading-text">Processing payment...</div>
+        <button class="pay-cancel-btn" id="pay-cancel-btn" style="display:none">Cancel</button>
       </div>
     `;
 
-    document.getElementById('btn-pay').addEventListener('click', initiatePayment);
+    // Tab switching
+    body.querySelectorAll('.pay-method-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        body.querySelectorAll('.pay-method-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        body.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Card number formatting (4-4-4-4)
+    const cardNumEl = document.getElementById('pay-card-number');
+    cardNumEl.addEventListener('input', () => {
+      let v = cardNumEl.value.replace(/\D/g, '').slice(0, 16);
+      cardNumEl.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
+    });
+
+    // Expiry formatting (MM / YY)
+    const expiryEl = document.getElementById('pay-card-expiry');
+    expiryEl.addEventListener('input', () => {
+      let v = expiryEl.value.replace(/\D/g, '').slice(0, 4);
+      if (v.length >= 3) v = v.slice(0, 2) + ' / ' + v.slice(2);
+      expiryEl.value = v;
+    });
+
+    // UPI Pay button (collect flow — works on both mobile and desktop)
+    document.getElementById('btn-pay-upi').addEventListener('click', () => {
+      const vpa = document.getElementById('pay-upi-id').value.trim();
+      if (!vpa || !vpa.includes('@')) {
+        alert('Please enter a valid UPI ID (e.g. yourname@okicici)');
+        return;
+      }
+      // On desktop, close the active QR before starting collect flow
+      if (!mobile && activeQrCodeId) {
+        cleanupPaymentState();
+      }
+      processPayment('upi_collect', { vpa });
+    });
+
+    // Card Pay button
+    document.getElementById('btn-pay-card').addEventListener('click', () => {
+      const num = document.getElementById('pay-card-number').value.replace(/\s/g, '');
+      const expRaw = document.getElementById('pay-card-expiry').value.replace(/\D/g, '');
+      const cvv = document.getElementById('pay-card-cvv').value.trim();
+      const cardName = document.getElementById('pay-card-name').value.trim();
+      if (num.length < 13) { alert('Please enter a valid card number'); return; }
+      if (expRaw.length !== 4) { alert('Please enter a valid expiry (MM/YY)'); return; }
+      if (cvv.length < 3) { alert('Please enter a valid CVV'); return; }
+      if (!cardName) { alert('Please enter the cardholder name'); return; }
+      // Close active QR on desktop
+      if (!mobile && activeQrCodeId) {
+        cleanupPaymentState();
+      }
+      processPayment('card', {
+        number: num,
+        expMonth: expRaw.slice(0, 2),
+        expYear: expRaw.slice(2),
+        cvv,
+        name: cardName
+      });
+    });
+
+    // UPI app buttons — mobile only (intent flow)
+    if (mobile) {
+      body.querySelectorAll('.upi-app-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          processPayment('upi_intent', { app: btn.dataset.app });
+        });
+      });
+    }
+
+    // Desktop: auto-generate QR code when UPI tab is shown
+    if (!mobile) {
+      loadUpiQrCode();
+    }
+
     document.getElementById('booking-footer').innerHTML = '';
-    document.getElementById('btn-back-5').addEventListener('click', () => { state.step = 4; render(); });
+    document.getElementById('btn-back-5').addEventListener('click', () => {
+      cleanupPaymentState();
+      state.step = 4;
+      render();
+    });
   }
 
-  async function initiatePayment() {
-    const content = document.getElementById('step5-content');
-    const loading = document.getElementById('pay-loading');
-
-    content.style.display = 'none';
-    loading.classList.add('active');
+  async function loadUpiQrCode() {
+    const container = document.getElementById('upi-qr-container');
+    if (!container) return;
 
     const bookingData = {
       service: state.service.name,
@@ -518,90 +736,174 @@
     };
 
     try {
-      // 1. Fetch Razorpay key
+      const res = await fetch(`${API_BASE}/api/create-upi-qr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate QR');
+
+      activeQrCodeId = data.qrCodeId;
+
+      container.innerHTML = `<img class="upi-qr-image" src="${data.qrImageUrl}" alt="UPI QR Code">`;
+
+      // Start polling for QR payment
+      startPaymentPolling({
+        qrCodeId: data.qrCodeId,
+        bookingId: data.bookingId,
+        ...bookingData
+      });
+    } catch (err) {
+      container.innerHTML = `<div class="upi-qr-error">Could not generate QR code.<br>Please use UPI ID below.</div>`;
+    }
+  }
+
+  async function processPayment(method, details) {
+    const content = document.getElementById('step5-content');
+    const loading = document.getElementById('pay-loading');
+    const loadingText = document.getElementById('pay-loading-text');
+    const cancelBtn = document.getElementById('pay-cancel-btn');
+
+    content.style.display = 'none';
+    loading.classList.add('active');
+    loadingText.textContent = 'Creating order...';
+    cancelBtn.style.display = 'none';
+
+    const bookingData = {
+      service: state.service.name,
+      vehicleType: state.vehicleType.name,
+      price: state.price,
+      date: state.date,
+      timeSlot: state.timeSlot,
+      name: state.name,
+      phone: '91' + state.phone,
+      vehicleNumber: state.vehicleNumber,
+      notes: state.notes
+    };
+
+    try {
       const keyId = await fetchRazorpayKey();
       if (!keyId) throw new Error('Could not load payment config');
 
-      // 2. Create order on server
       const orderRes = await fetch(`${API_BASE}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData)
       });
       const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
 
-      if (!orderRes.ok) {
-        throw new Error(orderData.error || 'Failed to create order');
-      }
+      loadingText.textContent = 'Processing payment...';
 
-      // Hide loading before opening Razorpay
-      loading.classList.remove('active');
-      content.style.display = '';
+      // Initialize Razorpay Custom Checkout
+      const rzp = new window.Razorpay({ key: keyId });
+      activeRzpInstance = rzp;
 
-      // 3. Open Razorpay checkout
-      const options = {
-        key: keyId,
+      const paymentBase = {
+        order_id: orderData.orderId,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Road Runners Auto Detailing',
-        description: `${state.service.name} — ${state.vehicleType.name}`,
-        order_id: orderData.orderId,
-        prefill: {
-          name: state.name,
-          contact: state.phone,
-        },
-        theme: {
-          color: '#d4a017',
-        },
-        handler: async function (response) {
-          // Payment succeeded — verify on server
-          content.style.display = 'none';
-          loading.classList.add('active');
-          loading.querySelector('.pay-loading-text').textContent = 'Verifying payment...';
-
-          try {
-            const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                bookingId: orderData.bookingId,
-                ...bookingData
-              })
-            });
-            const verifyData = await verifyRes.json();
-
-            if (verifyData.success) {
-              state.booking = verifyData.booking;
-              state.step = 6;
-              render();
-            } else {
-              alert(verifyData.error || 'Payment verification failed.');
-              loading.classList.remove('active');
-              content.style.display = '';
-            }
-          } catch {
-            alert('Network error during verification. Please contact support.');
-            loading.classList.remove('active');
-            content.style.display = '';
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            // User closed Razorpay popup without paying
-          }
-        }
+        email: 'booking@roadrunners.in',
+        contact: '91' + state.phone,
       };
 
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response) {
-        alert('Payment failed: ' + (response.error.description || 'Please try again.'));
+      let paymentPayload;
+
+      if (method === 'upi_collect') {
+        paymentPayload = {
+          ...paymentBase,
+          method: 'upi',
+          '_[flow]': 'collect',
+          'upi.vpa': details.vpa
+        };
+        loadingText.textContent = 'Waiting for payment confirmation...';
+        cancelBtn.style.display = '';
+      } else if (method === 'upi_intent') {
+        paymentPayload = {
+          ...paymentBase,
+          method: 'upi',
+          '_[flow]': 'intent',
+        };
+        loadingText.textContent = 'Waiting for payment confirmation...';
+        cancelBtn.style.display = '';
+      } else if (method === 'card') {
+        paymentPayload = {
+          ...paymentBase,
+          method: 'card',
+          'card[name]': details.name,
+          'card[number]': details.number,
+          'card[expiry_month]': details.expMonth,
+          'card[expiry_year]': details.expYear,
+          'card[cvv]': details.cvv
+        };
+      }
+
+      // Start polling as backup confirmation for UPI methods
+      if (method === 'upi_collect' || method === 'upi_intent') {
+        startPaymentPolling({
+          orderId: orderData.orderId,
+          bookingId: orderData.bookingId,
+          ...bookingData
+        });
+      }
+
+      // Cancel button handler
+      cancelBtn.onclick = () => {
+        stopPaymentPolling();
+        activeRzpInstance = null;
+        loading.classList.remove('active');
+        content.style.display = '';
+        cancelBtn.style.display = 'none';
+      };
+
+      // Register event handlers before creating payment
+      rzp.on('payment.success', async function (response) {
+        stopPaymentPolling();
+        cancelBtn.style.display = 'none';
+        loadingText.textContent = 'Verifying payment...';
+
+        try {
+          const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingId: orderData.bookingId,
+              ...bookingData
+            })
+          });
+          const verifyData = await verifyRes.json();
+
+          if (verifyData.success) {
+            state.booking = verifyData.booking;
+            state.step = 6;
+            render();
+          } else {
+            throw new Error(verifyData.error || 'Payment verification failed');
+          }
+        } catch (err) {
+          alert(err.message || 'Verification failed. Please contact support.');
+          loading.classList.remove('active');
+          content.style.display = '';
+        }
       });
-      rzp.open();
+
+      rzp.on('payment.error', function (response) {
+        stopPaymentPolling();
+        const msg = response.error?.description || 'Payment failed. Please try again.';
+        alert(msg);
+        loading.classList.remove('active');
+        content.style.display = '';
+        cancelBtn.style.display = 'none';
+      });
+
+      rzp.createPayment(paymentPayload);
 
     } catch (err) {
+      stopPaymentPolling();
       alert(err.message || 'Something went wrong. Please try again.');
       loading.classList.remove('active');
       content.style.display = '';

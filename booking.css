@@ -428,7 +428,201 @@
   background: rgba(212,160,23,0.08);
 }
 
-/* Payment */
+/* Payment method tabs */
+.pay-method-tabs {
+  display: flex;
+  margin-bottom: 1.25rem;
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  padding: 4px;
+}
+.pay-method-tab {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #888;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+.pay-method-tab:hover { color: #ccc; }
+.pay-method-tab.active {
+  background: #1e1e1e;
+  color: #d4a017;
+}
+
+/* Payment panels */
+.pay-panel { display: none; }
+.pay-panel.active { display: block; }
+
+/* Card fields row (expiry + CVV side by side) */
+.card-fields-row {
+  display: flex;
+  gap: 12px;
+}
+.card-fields-row .form-group { flex: 1; }
+
+/* UPI app divider */
+.upi-apps-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 1.25rem 0;
+}
+.upi-apps-divider::before,
+.upi-apps-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #1e1e1e;
+}
+.upi-apps-divider span {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* UPI app buttons */
+.upi-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.upi-app-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0.85rem 0.5rem;
+  background: #151515;
+  border: 1px solid #1e1e1e;
+  border-radius: 8px;
+  color: #ccc;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.upi-app-btn:hover {
+  border-color: #2a2a2a;
+  background: #1a1a1a;
+}
+.upi-app-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+.upi-app-icon.gpay { background: linear-gradient(135deg, #4285f4, #34a853); }
+.upi-app-icon.phonepe { background: #5f259f; }
+.upi-app-icon.paytm { background: #00baf2; }
+.upi-app-icon.bhim { background: linear-gradient(135deg, #e8581c, #1a56a5); }
+
+.upi-apps-note {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #555;
+  margin-top: 0.75rem;
+}
+
+/* UPI QR Code (desktop) */
+.upi-qr-section {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+.upi-qr-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+.upi-qr-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+.upi-qr-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px;
+}
+.upi-qr-amount {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #d4a017;
+  margin-top: 0.75rem;
+}
+.upi-qr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #888;
+  font-size: 0.8rem;
+}
+.upi-qr-error {
+  color: #888;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  padding: 1.5rem 0;
+}
+
+/* Secure note */
+.pay-secure-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  color: #555;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #1e1e1e;
+}
+
+/* Cancel payment button */
+.pay-cancel-btn {
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.pay-cancel-btn:hover {
+  color: #f0f0ea;
+  border-color: #d4a017;
+}
 
 /* Buttons */
 .booking-footer {
@@ -622,5 +816,8 @@
   }
   .step-title {
     font-size: 1.1rem;
+  }
+  .upi-apps-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

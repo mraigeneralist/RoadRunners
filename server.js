@@ -46,6 +46,60 @@ async function getAllRows() {
   return res.data.values || [];
 }
 
+// Helper: Save booking to Google Sheets (idempotent — safe to call multiple times)
+async function saveBooking(bookingData) {
+  const { bookingId, name, phone, vehicleNumber, service, vehicleType, price, date, timeSlot, notes } = bookingData;
+
+  const rows = await getAllRows();
+
+  // Idempotency: if booking already saved, return it
+  const existingRow = rows.find(r => r[0] === bookingId);
+  if (existingRow) {
+    return {
+      id: existingRow[0], name: existingRow[1], phone: existingRow[2],
+      vehicleNumber: existingRow[3], service: existingRow[4], vehicleType: existingRow[5],
+      price: Number(existingRow[6]), date: existingRow[7], timeSlot: existingRow[8],
+      notes: existingRow[9] || '', status: existingRow[10], createdAt: existingRow[11]
+    };
+  }
+
+  // Race-condition guard: check slot availability
+  const slotTaken = rows.some(
+    r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
+  );
+  if (slotTaken) {
+    const err = new Error('This time slot was just booked by someone else. Your payment will be refunded.');
+    err.code = 'SLOT_TAKEN';
+    throw err;
+  }
+
+  const createdAt = new Date().toISOString();
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: `${SHEET_RANGE}!A:L`,
+    valueInputOption: 'RAW',
+    insertDataOption: 'INSERT_ROWS',
+    requestBody: {
+      values: [[
+        bookingId, name, phone, vehicleNumber, service, vehicleType,
+        price, date, timeSlot, notes || '', 'confirmed', createdAt
+      ]]
+    }
+  });
+
+  const booking = {
+    id: bookingId, service, vehicleType, price, date, timeSlot,
+    name, phone, vehicleNumber, notes: notes || '', status: 'confirmed', createdAt
+  };
+
+  sendWhatsAppNotifications(booking).catch(err => {
+    console.error('WhatsApp notification error:', err.message);
+  });
+
+  return booking;
+}
+
 // Expose Razorpay key ID to frontend (public key, safe to expose)
 app.get('/api/config', (req, res) => {
   res.json({ razorpayKeyId: process.env.RAZORPAY_KEY_ID });
@@ -140,67 +194,112 @@ app.post('/api/verify-payment', async (req, res) => {
     return res.status(400).json({ error: 'Payment verification failed' });
   }
 
-  // Payment is verified — save to Google Sheets
+  // Payment verified — save booking
   try {
-    // Double-check slot isn't taken (race condition guard)
+    const booking = await saveBooking({
+      bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes
+    });
+    res.json({ success: true, booking });
+  } catch (err) {
+    if (err.code === 'SLOT_TAKEN') {
+      return res.status(409).json({ error: err.message });
+    }
+    console.error('Error saving booking:', err.message);
+    res.status(500).json({ error: 'Payment verified but failed to save booking. Please contact support.' });
+  }
+});
+
+// Generate UPI QR code for desktop payment
+app.post('/api/create-upi-qr', async (req, res) => {
+  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes } = req.body;
+
+  if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone || !vehicleNumber) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
     const rows = await getAllRows();
     const slotTaken = rows.some(
       r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
     );
-
     if (slotTaken) {
-      return res.status(409).json({ error: 'This time slot was just booked by someone else. Your payment will be refunded.' });
+      return res.status(409).json({ error: 'This time slot is already booked' });
     }
 
-    const createdAt = new Date().toISOString();
+    const bookingId = generateBookingId();
+    const amountInPaise = TEST_MODE ? 100 : price * 100;
+    const closeBy = Math.floor(Date.now() / 1000) + 900; // 15 min expiry
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SHEET_ID,
-      range: `${SHEET_RANGE}!A:L`,
-      valueInputOption: 'RAW',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: {
-        values: [[
-          bookingId,
-          name,
-          phone,
-          vehicleNumber,
-          service,
-          vehicleType,
-          price,
-          date,
-          timeSlot,
-          notes || '',
-          'confirmed',
-          createdAt
-        ]]
+    const qr = await razorpay.qrCode.create({
+      type: 'upi_qr',
+      name: 'RoadRunners Detailing',
+      usage: 'single_use',
+      fixed_amount: true,
+      payment_amount: amountInPaise,
+      description: `Booking ${bookingId}: ${service}`,
+      close_by: closeBy,
+      notes: {
+        bookingId, service, vehicleType, date, timeSlot,
+        customerName: name, customerPhone: phone, vehicleNumber,
+        actualPrice: String(price), bookingNotes: notes || ''
       }
     });
 
-    const booking = {
-      id: bookingId,
-      service,
-      vehicleType,
-      price,
-      date,
-      timeSlot,
-      name,
-      phone,
-      vehicleNumber,
-      notes: notes || '',
-      status: 'confirmed',
-      createdAt
-    };
-
-    // Send WhatsApp notifications (non-blocking)
-    sendWhatsAppNotifications(booking).catch(err => {
-      console.error('WhatsApp notification error:', err.message);
+    res.json({
+      qrCodeId: qr.id,
+      qrImageUrl: qr.image_url,
+      bookingId,
+      amount: amountInPaise,
     });
-
-    res.json({ success: true, booking });
   } catch (err) {
-    console.error('Error saving booking:', err.message);
-    res.status(500).json({ error: 'Payment verified but failed to save booking. Please contact support.' });
+    console.error('Error creating UPI QR:', err.message);
+    res.status(500).json({ error: 'Failed to generate QR code' });
+  }
+});
+
+// Close an active QR code
+app.post('/api/close-qr', async (req, res) => {
+  try {
+    if (req.body.qrCodeId) {
+      await razorpay.qrCode.close(req.body.qrCodeId);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: true }); // Already closed or expired — fine
+  }
+});
+
+// Poll payment status (for UPI QR and collect flows)
+app.post('/api/payment-status', async (req, res) => {
+  const { orderId, qrCodeId, bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes } = req.body;
+
+  try {
+    let paid = false;
+
+    if (qrCodeId) {
+      const qr = await razorpay.qrCode.fetch(qrCodeId);
+      if (qr.payments_amount_received > 0) paid = true;
+    } else if (orderId) {
+      const order = await razorpay.orders.fetch(orderId);
+      if (order.status === 'paid') paid = true;
+    } else {
+      return res.status(400).json({ error: 'orderId or qrCodeId required' });
+    }
+
+    if (paid) {
+      const booking = await saveBooking({
+        bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes
+      });
+      return res.json({ status: 'paid', booking });
+    }
+
+    res.json({ status: 'pending' });
+  } catch (err) {
+    if (err.code === 'SLOT_TAKEN') {
+      return res.status(409).json({ error: err.message });
+    }
+    console.error('Error checking payment status:', err.message);
+    res.status(500).json({ error: 'Failed to check payment status' });
   }
 });
 
