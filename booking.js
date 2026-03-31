@@ -486,6 +486,7 @@
   let activeRzpInstance = null;
   let paymentPollInterval = null;
   let activeQrCodeId = null;
+  let qrCountdownInterval = null;
 
   function isMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -515,9 +516,18 @@
     }
   }
 
+  function stopQrCountdown() {
+    if (qrCountdownInterval) {
+      clearInterval(qrCountdownInterval);
+      qrCountdownInterval = null;
+    }
+  }
+
   function startPaymentPolling(params) {
     stopPaymentPolling();
+    let pollHandled = false;
     paymentPollInterval = setInterval(async () => {
+      if (pollHandled) return;
       try {
         const res = await fetch(`${API_BASE}/api/payment-status`, {
           method: 'POST',
@@ -526,7 +536,9 @@
         });
         const data = await res.json();
         if (data.status === 'paid') {
+          pollHandled = true;
           stopPaymentPolling();
+          stopQrCountdown();
           activeQrCodeId = null;
           state.booking = data.booking;
           state.step = 7;
@@ -540,6 +552,7 @@
 
   function cleanupPaymentState() {
     stopPaymentPolling();
+    stopQrCountdown();
     if (activeQrCodeId) {
       fetch(`${API_BASE}/api/close-qr`, {
         method: 'POST',
@@ -557,10 +570,9 @@
     const priceDisplay = state.price.toLocaleString('en-IN');
     const mobile = isMobile();
 
-    // Build UPI panel based on device type
+    // Build UPI panel — UPI ID input only (mobile & desktop), QR on desktop
     let upiPanelHtml;
     if (mobile) {
-      // MOBILE: UPI ID input + app buttons
       upiPanelHtml = `
         <div class="pay-panel active" id="panel-upi">
           <div class="form-group">
@@ -571,29 +583,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Pay \u20B9${priceDisplay}
           </button>
-          <div class="upi-apps-divider"><span>or pay using app</span></div>
-          <div class="upi-apps-grid">
-            <button class="upi-app-btn" data-app="gpay">
-              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/googlepay.svg" alt="GPay" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon gpay" style="display:none">G</span>
-              <span>GPay</span>
-            </button>
-            <button class="upi-app-btn" data-app="phonepe">
-              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/phonepe.svg" alt="PhonePe" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon phonepe" style="display:none">P</span>
-              <span>PhonePe</span>
-            </button>
-            <button class="upi-app-btn" data-app="paytm">
-              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/paytm.svg" alt="Paytm" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon paytm" style="display:none">P</span>
-              <span>Paytm</span>
-            </button>
-            <button class="upi-app-btn" data-app="bhim">
-              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/bhim.svg" alt="BHIM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon bhim" style="display:none">B</span>
-              <span>BHIM</span>
-            </button>
-          </div>
-          <div class="upi-apps-note">Opens UPI app on your phone</div>
         </div>`;
     } else {
-      // DESKTOP: QR code + UPI ID input (no app buttons)
       upiPanelHtml = `
         <div class="pay-panel active" id="panel-upi">
           <div class="upi-qr-section" id="upi-qr-section">
@@ -605,6 +596,7 @@
               </div>
             </div>
             <div class="upi-qr-amount">\u20B9${priceDisplay}</div>
+            <div class="upi-qr-timer" id="upi-qr-timer"></div>
           </div>
           <div class="upi-apps-divider"><span>or enter UPI ID</span></div>
           <div class="form-group">
@@ -667,27 +659,13 @@
         ${upiPanelHtml}
 
         <div class="pay-panel" id="panel-card">
-          <div class="form-group">
-            <label>Card Number</label>
-            <input type="text" id="pay-card-number" placeholder="1234 5678 9012 3456" maxlength="19" inputmode="numeric" autocomplete="cc-number">
-          </div>
-          <div class="card-fields-row">
-            <div class="form-group">
-              <label>Expiry</label>
-              <input type="text" id="pay-card-expiry" placeholder="MM / YY" maxlength="7" inputmode="numeric" autocomplete="cc-exp">
-            </div>
-            <div class="form-group">
-              <label>CVV</label>
-              <input type="password" id="pay-card-cvv" placeholder="&#8226;&#8226;&#8226;" maxlength="4" inputmode="numeric" autocomplete="cc-csc">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Cardholder Name</label>
-            <input type="text" id="pay-card-name" placeholder="Name on card" autocomplete="cc-name">
+          <div class="card-panel-info">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4a017" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <p>You'll be redirected to Razorpay's secure payment page to enter your card details.</p>
           </div>
           <button class="booking-btn booking-btn-pay" id="btn-pay-card">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Pay \u20B9${priceDisplay}
+            Pay \u20B9${priceDisplay} with Card
           </button>
         </div>
 
@@ -714,68 +692,28 @@
       });
     });
 
-    // Card number formatting (4-4-4-4)
-    const cardNumEl = document.getElementById('pay-card-number');
-    cardNumEl.addEventListener('input', () => {
-      let v = cardNumEl.value.replace(/\D/g, '').slice(0, 16);
-      cardNumEl.value = v.replace(/(\d{4})(?=\d)/g, '$1 ');
-    });
-
-    // Expiry formatting (MM / YY)
-    const expiryEl = document.getElementById('pay-card-expiry');
-    expiryEl.addEventListener('input', () => {
-      let v = expiryEl.value.replace(/\D/g, '').slice(0, 4);
-      if (v.length >= 3) v = v.slice(0, 2) + ' / ' + v.slice(2);
-      expiryEl.value = v;
-    });
-
-    // UPI Pay button (collect flow — works on both mobile and desktop)
+    // UPI Pay button (collect flow)
     document.getElementById('btn-pay-upi').addEventListener('click', () => {
       const vpa = document.getElementById('pay-upi-id').value.trim();
       if (!vpa || !vpa.includes('@')) {
         alert('Please enter a valid UPI ID (e.g. yourname@okicici)');
         return;
       }
-      // On desktop, close the active QR before starting collect flow
       if (!mobile && activeQrCodeId) {
         cleanupPaymentState();
       }
       processPayment('upi_collect', { vpa });
     });
 
-    // Card Pay button
+    // Card Pay button — opens Razorpay Standard Checkout
     document.getElementById('btn-pay-card').addEventListener('click', () => {
-      const num = document.getElementById('pay-card-number').value.replace(/\s/g, '');
-      const expRaw = document.getElementById('pay-card-expiry').value.replace(/\D/g, '');
-      const cvv = document.getElementById('pay-card-cvv').value.trim();
-      const cardName = document.getElementById('pay-card-name').value.trim();
-      if (num.length < 13) { alert('Please enter a valid card number'); return; }
-      if (expRaw.length !== 4) { alert('Please enter a valid expiry (MM/YY)'); return; }
-      if (cvv.length < 3) { alert('Please enter a valid CVV'); return; }
-      if (!cardName) { alert('Please enter the cardholder name'); return; }
-      // Close active QR on desktop
       if (!mobile && activeQrCodeId) {
         cleanupPaymentState();
       }
-      processPayment('card', {
-        number: num,
-        expMonth: expRaw.slice(0, 2),
-        expYear: expRaw.slice(2),
-        cvv,
-        name: cardName
-      });
+      processPayment('card', {});
     });
 
-    // UPI app buttons — mobile only (intent flow)
-    if (mobile) {
-      body.querySelectorAll('.upi-app-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          processPayment('upi_intent', { app: btn.dataset.app });
-        });
-      });
-    }
-
-    // Desktop: auto-generate QR code when UPI tab is shown
+    // Desktop: auto-generate QR code
     if (!mobile) {
       loadUpiQrCode();
     }
@@ -818,6 +756,34 @@
 
       container.innerHTML = `<img class="upi-qr-image" src="${data.qrImageUrl}" alt="UPI QR Code">`;
 
+      // Start QR expiry countdown (15 minutes)
+      let secondsLeft = 15 * 60;
+      const timerEl = document.getElementById('upi-qr-timer');
+      stopQrCountdown();
+      qrCountdownInterval = setInterval(() => {
+        secondsLeft--;
+        if (timerEl) {
+          const mins = Math.floor(secondsLeft / 60);
+          const secs = secondsLeft % 60;
+          timerEl.textContent = `Expires in ${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        if (secondsLeft <= 0) {
+          stopQrCountdown();
+          stopPaymentPolling();
+          activeQrCodeId = null;
+          const section = document.getElementById('upi-qr-section');
+          if (section) {
+            section.innerHTML = `
+              <div class="upi-qr-title">QR Code Expired</div>
+              <div style="padding:1.5rem 0;">
+                <button class="booking-btn booking-btn-pay" id="btn-refresh-qr" style="width:auto;padding:0.7rem 1.5rem;font-size:0.75rem;">Generate New QR</button>
+              </div>
+            `;
+            document.getElementById('btn-refresh-qr').addEventListener('click', loadUpiQrCode);
+          }
+        }
+      }, 1000);
+
       // Start polling for QR payment
       startPaymentPolling({
         qrCodeId: data.qrCodeId,
@@ -853,6 +819,8 @@
       notes: state.notes
     };
 
+    let paymentHandled = false;
+
     try {
       const keyId = await fetchRazorpayKey();
       if (!keyId) throw new Error('Could not load payment config');
@@ -865,62 +833,117 @@
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
 
-      loadingText.textContent = 'Processing payment...';
+      // ── Card: Standard Checkout popup ──
+      if (method === 'card') {
+        loadingText.textContent = 'Opening payment page...';
 
-      // Initialize Razorpay Custom Checkout
+        const options = {
+          key: keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
+          order_id: orderData.orderId,
+          name: 'RoadRunners Detailing',
+          description: state.service.name,
+          prefill: {
+            name: state.name,
+            email: state.email || '',
+            contact: '91' + state.phone,
+            method: 'card'
+          },
+          method: {
+            upi: false,
+            netbanking: false,
+            wallet: false,
+            card: true
+          },
+          handler: async function (response) {
+            if (paymentHandled) return;
+            paymentHandled = true;
+            loading.classList.add('active');
+            loadingText.textContent = 'Verifying payment...';
+
+            try {
+              const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  bookingId: orderData.bookingId,
+                  ...bookingData
+                })
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                state.booking = verifyData.booking;
+                state.step = 7;
+                render();
+              } else {
+                throw new Error(verifyData.error || 'Payment verification failed');
+              }
+            } catch (err) {
+              alert(err.message || 'Verification failed. Please contact support.');
+              loading.classList.remove('active');
+              content.style.display = '';
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              if (!paymentHandled) {
+                loading.classList.remove('active');
+                content.style.display = '';
+              }
+            }
+          },
+          theme: { color: '#d4a017' }
+        };
+
+        const rzpStandard = new window.Razorpay(options);
+        rzpStandard.open();
+        return;
+      }
+
+      // ── UPI Collect: Custom Checkout ──
+      loadingText.textContent = 'Waiting for payment confirmation...';
+      cancelBtn.style.display = '';
+
       const rzp = new window.Razorpay({ key: keyId });
       activeRzpInstance = rzp;
 
-      const paymentBase = {
+      const paymentPayload = {
         order_id: orderData.orderId,
         amount: orderData.amount,
         currency: orderData.currency,
         email: state.email || 'booking@roadrunners.in',
         contact: '91' + state.phone,
+        method: 'upi',
+        '_[flow]': 'collect',
+        'upi.vpa': details.vpa
       };
 
-      let paymentPayload;
+      // Start polling as backup confirmation
+      startPaymentPolling({
+        orderId: orderData.orderId,
+        bookingId: orderData.bookingId,
+        ...bookingData
+      });
 
-      if (method === 'upi_collect') {
-        paymentPayload = {
-          ...paymentBase,
-          method: 'upi',
-          '_[flow]': 'collect',
-          'upi.vpa': details.vpa
-        };
-        loadingText.textContent = 'Waiting for payment confirmation...';
-        cancelBtn.style.display = '';
-      } else if (method === 'upi_intent') {
-        paymentPayload = {
-          ...paymentBase,
-          method: 'upi',
-          '_[flow]': 'intent',
-        };
-        loadingText.textContent = 'Waiting for payment confirmation...';
-        cancelBtn.style.display = '';
-      } else if (method === 'card') {
-        paymentPayload = {
-          ...paymentBase,
-          method: 'card',
-          'card[name]': details.name,
-          'card[number]': details.number,
-          'card[expiry_month]': details.expMonth,
-          'card[expiry_year]': details.expYear,
-          'card[cvv]': details.cvv
-        };
-      }
-
-      // Start polling as backup confirmation for UPI methods
-      if (method === 'upi_collect' || method === 'upi_intent') {
-        startPaymentPolling({
-          orderId: orderData.orderId,
-          bookingId: orderData.bookingId,
-          ...bookingData
-        });
-      }
+      // 10-minute timeout for UPI
+      const upiTimeout = setTimeout(() => {
+        if (!paymentHandled) {
+          stopPaymentPolling();
+          activeRzpInstance = null;
+          alert('Payment timed out. If you completed the payment, please contact support.');
+          loading.classList.remove('active');
+          content.style.display = '';
+          cancelBtn.style.display = 'none';
+        }
+      }, 10 * 60 * 1000);
 
       // Cancel button handler
       cancelBtn.onclick = () => {
+        clearTimeout(upiTimeout);
         stopPaymentPolling();
         activeRzpInstance = null;
         loading.classList.remove('active');
@@ -928,8 +951,10 @@
         cancelBtn.style.display = 'none';
       };
 
-      // Register event handlers before creating payment
       rzp.on('payment.success', async function (response) {
+        if (paymentHandled) return;
+        paymentHandled = true;
+        clearTimeout(upiTimeout);
         stopPaymentPolling();
         cancelBtn.style.display = 'none';
         loadingText.textContent = 'Verifying payment...';
@@ -963,6 +988,8 @@
       });
 
       rzp.on('payment.error', function (response) {
+        if (paymentHandled) return;
+        clearTimeout(upiTimeout);
         stopPaymentPolling();
         const msg = response.error?.description || 'Payment failed. Please try again.';
         alert(msg);

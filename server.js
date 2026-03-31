@@ -55,10 +55,23 @@ async function getAllRows() {
   return res.data.values || [];
 }
 
+// In-memory lock to prevent concurrent saves for the same booking
+const saveLocks = new Map();
+
 // Helper: Save booking to Google Sheets (idempotent — safe to call multiple times)
 async function saveBooking(bookingData) {
   const { bookingId, name, phone, vehicleNumber, email, service, vehicleType, price, date, timeSlot, notes } = bookingData;
 
+  // Wait if another save for this bookingId is in progress
+  if (saveLocks.has(bookingId)) {
+    await saveLocks.get(bookingId);
+  }
+
+  let resolve;
+  const lock = new Promise(r => { resolve = r; });
+  saveLocks.set(bookingId, lock);
+
+  try {
   const rows = await getAllRows();
 
   // Idempotency: if booking already saved, return it
@@ -107,6 +120,10 @@ async function saveBooking(bookingData) {
   });
 
   return booking;
+  } finally {
+    saveLocks.delete(bookingId);
+    resolve();
+  }
 }
 
 // Expose Razorpay key ID to frontend (public key, safe to expose)
@@ -303,7 +320,23 @@ app.post('/api/payment-status', async (req, res) => {
 
     if (qrCodeId) {
       const qr = await razorpay.qrCode.fetch(qrCodeId);
-      if (qr.payments_amount_received > 0) paid = true;
+      if (qr.payments_amount_received > 0 && qr.payments_count_received > 0) {
+        // Verify actual payment entity exists and amount matches
+        try {
+          const payments = await razorpay.qrCode.fetchAllPayments(qrCodeId);
+          if (payments.items && payments.items.length > 0) {
+            const payment = payments.items[0];
+            const expectedAmount = TEST_MODE ? 100 : (Number(price) * 100);
+            if (payment.status === 'captured' && payment.amount >= expectedAmount) {
+              paid = true;
+            }
+          }
+        } catch (fetchErr) {
+          // If fetchAllPayments fails, fall back to basic check
+          console.error('QR payment fetch error, using basic check:', fetchErr.message);
+          paid = true;
+        }
+      }
     } else if (orderId) {
       const order = await razorpay.orders.fetch(orderId);
       if (order.status === 'paid') paid = true;
