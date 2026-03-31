@@ -23,11 +23,20 @@ const sheets = google.sheets({ version: 'v4', auth });
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SHEET_RANGE = 'Sheet1';
 
-// Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Razorpay — resolve key names (support both RAZORPAY_KEY_ID and RAZORPAY_KEY_ID_LIVE)
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID_LIVE;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET_LIVE;
+
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  console.error('⚠ RAZORPAY KEYS MISSING — Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment variables');
+  console.error('  Available env vars:', Object.keys(process.env).filter(k => k.includes('RAZORPAY')).join(', ') || '(none)');
+} else {
+  console.log(`Razorpay initialized with key: ${RAZORPAY_KEY_ID.substring(0, 12)}...`);
+}
+
+const razorpay = (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET)
+  ? new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET })
+  : null;
 
 app.use(cors());
 app.use(express.json());
@@ -102,7 +111,11 @@ async function saveBooking(bookingData) {
 
 // Expose Razorpay key ID to frontend (public key, safe to expose)
 app.get('/api/config', (req, res) => {
-  res.json({ razorpayKeyId: process.env.RAZORPAY_KEY_ID });
+  if (!RAZORPAY_KEY_ID) {
+    console.error('/api/config called but RAZORPAY_KEY_ID is not set');
+    return res.status(500).json({ error: 'Payment configuration missing on server' });
+  }
+  res.json({ razorpayKeyId: RAZORPAY_KEY_ID });
 });
 
 // Get booked slots for a specific date
@@ -121,6 +134,11 @@ app.get('/api/slots/:date', async (req, res) => {
 
 // Step 1: Create Razorpay order
 app.post('/api/create-order', async (req, res) => {
+  if (!razorpay) {
+    console.error('POST /api/create-order failed: Razorpay not initialized (missing keys)');
+    return res.status(500).json({ error: 'Payment service not configured on server' });
+  }
+
   const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
 
   if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone) {
@@ -187,7 +205,7 @@ app.post('/api/verify-payment', async (req, res) => {
 
   // Verify signature
   const expectedSignature = crypto
-    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .createHmac('sha256', RAZORPAY_KEY_SECRET)
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
     .digest('hex');
 
@@ -212,6 +230,11 @@ app.post('/api/verify-payment', async (req, res) => {
 
 // Generate UPI QR code for desktop payment
 app.post('/api/create-upi-qr', async (req, res) => {
+  if (!razorpay) {
+    console.error('POST /api/create-upi-qr failed: Razorpay not initialized (missing keys)');
+    return res.status(500).json({ error: 'Payment service not configured on server' });
+  }
+
   const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
 
   if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone) {

@@ -351,6 +351,15 @@
     }
   }
 
+  // Convert slot string like "9:30 AM" or "12:30 PM" to 24h minutes
+  function slotToMinutes(slot) {
+    const [time, period] = slot.split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (period === 'PM' && h !== 12) h += 12;
+    if (period === 'AM' && h === 12) h = 0;
+    return h * 60 + m;
+  }
+
   // ── STEP 4: Select Time Slot ──
   async function renderStep4() {
     const body = document.getElementById('booking-body');
@@ -372,15 +381,29 @@
       state.bookedSlots = [];
     }
 
+    // If selected date is today, filter out past time slots
+    const nowIST = getNowIST();
+    const isToday = state.date === toDateStr(nowIST);
+    const currentMinutes = isToday ? nowIST.getHours() * 60 + nowIST.getMinutes() : 0;
+
     const grid = document.getElementById('time-slots-grid');
     let html = '';
     TIME_SLOTS.forEach(slot => {
+      const isPast = isToday && slotToMinutes(slot) <= currentMinutes;
       const isBooked = state.bookedSlots.includes(slot);
-      const isSel = state.timeSlot === slot;
-      const cls = isBooked ? 'booked' : isSel ? 'selected' : '';
-      html += `<div class="time-slot ${cls}" data-slot="${slot}" ${isBooked ? '' : ''}>${slot}${isBooked ? ' (Booked)' : ''}</div>`;
+      const isUnavailable = isBooked || isPast;
+      const isSel = state.timeSlot === slot && !isUnavailable;
+      const cls = isUnavailable ? 'booked' : isSel ? 'selected' : '';
+      const label = isPast ? ' (Past)' : isBooked ? ' (Booked)' : '';
+      html += `<div class="time-slot ${cls}" data-slot="${slot}">${slot}${label}</div>`;
     });
     grid.innerHTML = html;
+
+    // If previously selected slot is now past, clear it
+    if (state.timeSlot && isToday && slotToMinutes(state.timeSlot) <= currentMinutes) {
+      state.timeSlot = null;
+      renderFooter4();
+    }
 
     grid.querySelectorAll('.time-slot:not(.booked)').forEach(el => {
       el.addEventListener('click', () => {
@@ -473,9 +496,14 @@
     try {
       const res = await fetch(`${API_BASE}/api/config`);
       const data = await res.json();
+      if (!res.ok || !data.razorpayKeyId) {
+        console.error('Payment config error:', data.error || 'No razorpayKeyId in response');
+        return null;
+      }
       razorpayKeyId = data.razorpayKeyId;
       return razorpayKeyId;
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch payment config:', err.message);
       return null;
     }
   }

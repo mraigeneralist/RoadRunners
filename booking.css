@@ -259,7 +259,7 @@
   color: #333;
   cursor: not-allowed;
 }
-.cal-cell:not(.disabled):not(.empty):hover {
+.cal-cell:not(.disabled):not(.empty):not(.selected):hover {
   background: #1a1a1a;
   border-color: #2a2a2a;
 }
@@ -267,11 +267,12 @@
   color: #d4a017;
   font-weight: 700;
 }
-.cal-cell.selected {
-  background: #d4a017;
-  color: #0a0a0a;
+.cal-cell.selected,
+.cal-cell.selected:hover {
+  background: #d4a017 !important;
+  color: #0a0a0a !important;
   font-weight: 700;
-  border-color: #d4a017;
+  border-color: #d4a017 !important;
 }
 
 /* Time slots */
@@ -293,14 +294,15 @@
   cursor: pointer;
   transition: border-color 0.25s ease, background 0.25s ease;
 }
-.time-slot:hover:not(.booked) {
+.time-slot:hover:not(.booked):not(.selected) {
   border-color: #2a2a2a;
   background: #1a1a1a;
 }
-.time-slot.selected {
-  border-color: #d4a017;
-  background: rgba(212,160,23,0.06);
-  color: #d4a017;
+.time-slot.selected,
+.time-slot.selected:hover {
+  border-color: #d4a017 !important;
+  background: rgba(212,160,23,0.06) !important;
+  color: #d4a017 !important;
 }
 .time-slot.booked {
   opacity: 0.3;
