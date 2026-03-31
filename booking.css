@@ -521,10 +521,16 @@
   border-color: #2a2a2a;
   background: #1a1a1a;
 }
+.upi-app-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: contain;
+}
 .upi-app-icon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;

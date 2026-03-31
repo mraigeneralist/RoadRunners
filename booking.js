@@ -45,7 +45,7 @@
     timeSlot: null,
     name: '',
     phone: '',
-    vehicleNumber: '',
+    email: '',
     notes: '',
     bookedSlots: [],
     booking: null
@@ -53,6 +53,16 @@
 
   // Determine API base URL
   const API_BASE = window.location.origin;
+
+  // IST helpers — all date logic uses Indian Standard Time (UTC+5:30)
+  function getNowIST() {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    return new Date(utc + 5.5 * 3600000);
+  }
+  function toDateStr(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
 
   function createModal() {
     const overlay = document.createElement('div');
@@ -81,7 +91,7 @@
   }
 
   function openBooking() {
-    state = { step: 1, service: null, vehicleType: null, price: null, date: null, timeSlot: null, name: '', phone: '', vehicleNumber: '', notes: '', bookedSlots: [], booking: null };
+    state = { step: 1, service: null, vehicleType: null, price: null, date: null, timeSlot: null, name: '', phone: '', email: '', notes: '', bookedSlots: [], booking: null };
     const overlay = document.getElementById('booking-overlay');
     overlay.style.display = 'flex';
     requestAnimationFrame(() => overlay.classList.add('active'));
@@ -226,11 +236,17 @@
   // ── STEP 3: Select Date ──
   function renderStep3() {
     const body = document.getElementById('booking-body');
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const minDate = tomorrow;
-    const maxDate = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
+    const nowIST = getNowIST();
+    const todayStr = toDateStr(nowIST);
+
+    // Allow today if current IST time is before 7:30 PM (last slot)
+    const canBookToday = nowIST.getHours() < 19 || (nowIST.getHours() === 19 && nowIST.getMinutes() < 30);
+    const minDateObj = canBookToday
+      ? new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate())
+      : new Date(nowIST.getFullYear(), nowIST.getMonth(), nowIST.getDate() + 1);
+    const minStr = toDateStr(minDateObj);
+    const maxDateObj = new Date(nowIST.getFullYear(), nowIST.getMonth() + 2, nowIST.getDate());
+    const maxStr = toDateStr(maxDateObj);
 
     // Determine which month to show
     let viewDate;
@@ -238,7 +254,7 @@
       const parts = state.date.split('-');
       viewDate = new Date(+parts[0], +parts[1] - 1, 1);
     } else {
-      viewDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), 1);
+      viewDate = new Date(minDateObj.getFullYear(), minDateObj.getMonth(), 1);
     }
 
     function buildCalendar(viewYear, viewMonth) {
@@ -246,8 +262,11 @@
       const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
       const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-      const canPrev = new Date(viewYear, viewMonth, 0) >= minDate;
-      const canNext = new Date(viewYear, viewMonth + 1, 1) <= maxDate;
+      // Can navigate to prev month if it contains any dates >= minDate
+      const prevMonthLastDay = toDateStr(new Date(viewYear, viewMonth, 0));
+      const canPrev = prevMonthLastDay >= minStr;
+      const nextMonthFirstDay = toDateStr(new Date(viewYear, viewMonth + 1, 1));
+      const canNext = nextMonthFirstDay <= maxStr;
 
       let html = `
         <div class="step-label">Step 3 of 6</div>
@@ -272,15 +291,14 @@
       }
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const cellDate = new Date(viewYear, viewMonth, d);
         const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const isDisabled = cellDate < minDate || cellDate > maxDate;
+        const isDisabled = dateStr < minStr || dateStr > maxStr;
         const isSelected = state.date === dateStr;
-        const isToday = cellDate.toDateString() === today.toDateString();
+        const isToday = dateStr === todayStr;
         let cls = 'cal-cell';
         if (isDisabled) cls += ' disabled';
         if (isSelected) cls += ' selected';
-        if (isToday) cls += ' today';
+        if (isToday && !isSelected) cls += ' today';
         html += `<div class="${cls}" data-date="${dateStr}">${d}</div>`;
       }
 
@@ -367,7 +385,9 @@
     grid.querySelectorAll('.time-slot:not(.booked)').forEach(el => {
       el.addEventListener('click', () => {
         state.timeSlot = el.dataset.slot;
-        render();
+        grid.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+        el.classList.add('selected');
+        renderFooter4();
       });
     });
   }
@@ -399,8 +419,8 @@
         <input type="tel" id="b-phone" placeholder="e.g. 9176347862" value="${escapeHtml(state.phone)}" maxlength="10">
       </div>
       <div class="form-group">
-        <label>Vehicle Number</label>
-        <input type="text" id="b-vehicle" placeholder="e.g. TN 01 AB 1234" value="${escapeHtml(state.vehicleNumber)}" style="text-transform:uppercase;">
+        <label>Email Address (Optional)</label>
+        <input type="email" id="b-email" placeholder="e.g. rajesh@gmail.com" value="${escapeHtml(state.email)}">
       </div>
       <div class="form-group">
         <label>Special Notes (Optional)</label>
@@ -410,24 +430,24 @@
 
     const nameEl = document.getElementById('b-name');
     const phoneEl = document.getElementById('b-phone');
-    const vehicleEl = document.getElementById('b-vehicle');
+    const emailEl = document.getElementById('b-email');
     const notesEl = document.getElementById('b-notes');
 
     function sync() {
       state.name = nameEl.value.trim();
       state.phone = phoneEl.value.trim();
-      state.vehicleNumber = vehicleEl.value.trim().toUpperCase();
+      state.email = emailEl.value.trim();
       state.notes = notesEl.value.trim();
       renderFooter5();
     }
 
-    [nameEl, phoneEl, vehicleEl, notesEl].forEach(el => el.addEventListener('input', sync));
+    [nameEl, phoneEl, emailEl, notesEl].forEach(el => el.addEventListener('input', sync));
     renderFooter5();
   }
 
   function renderFooter5() {
     const footer = document.getElementById('booking-footer');
-    const valid = state.name && /^[6-9]\d{9}$/.test(state.phone) && state.vehicleNumber.length >= 4;
+    const valid = state.name && /^[6-9]\d{9}$/.test(state.phone);
     footer.innerHTML = `
       <button class="booking-btn booking-btn-back" id="btn-back-4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${valid ? '' : 'disabled'} id="btn-next-4">Review Booking</button>
@@ -526,19 +546,19 @@
           <div class="upi-apps-divider"><span>or pay using app</span></div>
           <div class="upi-apps-grid">
             <button class="upi-app-btn" data-app="gpay">
-              <span class="upi-app-icon gpay">G</span>
+              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/googlepay.svg" alt="GPay" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon gpay" style="display:none">G</span>
               <span>GPay</span>
             </button>
             <button class="upi-app-btn" data-app="phonepe">
-              <span class="upi-app-icon phonepe">P</span>
+              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/phonepe.svg" alt="PhonePe" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon phonepe" style="display:none">P</span>
               <span>PhonePe</span>
             </button>
             <button class="upi-app-btn" data-app="paytm">
-              <span class="upi-app-icon paytm">P</span>
+              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/paytm.svg" alt="Paytm" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon paytm" style="display:none">P</span>
               <span>Paytm</span>
             </button>
             <button class="upi-app-btn" data-app="bhim">
-              <span class="upi-app-icon bhim">B</span>
+              <img class="upi-app-logo" src="https://cdn.razorpay.com/app/bhim.svg" alt="BHIM" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="upi-app-icon bhim" style="display:none">B</span>
               <span>BHIM</span>
             </button>
           </div>
@@ -752,7 +772,8 @@
       timeSlot: state.timeSlot,
       name: state.name,
       phone: '91' + state.phone,
-      vehicleNumber: state.vehicleNumber,
+      vehicleNumber: '',
+      email: state.email,
       notes: state.notes
     };
 
@@ -799,7 +820,8 @@
       timeSlot: state.timeSlot,
       name: state.name,
       phone: '91' + state.phone,
-      vehicleNumber: state.vehicleNumber,
+      vehicleNumber: '',
+      email: state.email,
       notes: state.notes
     };
 
@@ -825,7 +847,7 @@
         order_id: orderData.orderId,
         amount: orderData.amount,
         currency: orderData.currency,
-        email: 'booking@roadrunners.in',
+        email: state.email || 'booking@roadrunners.in',
         contact: '91' + state.phone,
       };
 

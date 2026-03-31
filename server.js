@@ -48,7 +48,7 @@ async function getAllRows() {
 
 // Helper: Save booking to Google Sheets (idempotent — safe to call multiple times)
 async function saveBooking(bookingData) {
-  const { bookingId, name, phone, vehicleNumber, service, vehicleType, price, date, timeSlot, notes } = bookingData;
+  const { bookingId, name, phone, vehicleNumber, email, service, vehicleType, price, date, timeSlot, notes } = bookingData;
 
   const rows = await getAllRows();
 
@@ -57,7 +57,7 @@ async function saveBooking(bookingData) {
   if (existingRow) {
     return {
       id: existingRow[0], name: existingRow[1], phone: existingRow[2],
-      vehicleNumber: existingRow[3], service: existingRow[4], vehicleType: existingRow[5],
+      email: existingRow[3], service: existingRow[4], vehicleType: existingRow[5],
       price: Number(existingRow[6]), date: existingRow[7], timeSlot: existingRow[8],
       notes: existingRow[9] || '', status: existingRow[10], createdAt: existingRow[11]
     };
@@ -82,7 +82,7 @@ async function saveBooking(bookingData) {
     insertDataOption: 'INSERT_ROWS',
     requestBody: {
       values: [[
-        bookingId, name, phone, vehicleNumber, service, vehicleType,
+        bookingId, name, phone, email || '', service, vehicleType,
         price, date, timeSlot, notes || '', 'confirmed', createdAt
       ]]
     }
@@ -90,7 +90,7 @@ async function saveBooking(bookingData) {
 
   const booking = {
     id: bookingId, service, vehicleType, price, date, timeSlot,
-    name, phone, vehicleNumber, notes: notes || '', status: 'confirmed', createdAt
+    name, phone, email: email || '', notes: notes || '', status: 'confirmed', createdAt
   };
 
   sendWhatsAppNotifications(booking).catch(err => {
@@ -121,9 +121,9 @@ app.get('/api/slots/:date', async (req, res) => {
 
 // Step 1: Create Razorpay order
 app.post('/api/create-order', async (req, res) => {
-  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes } = req.body;
+  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
 
-  if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone || !vehicleNumber) {
+  if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -152,7 +152,8 @@ app.post('/api/create-order', async (req, res) => {
         timeSlot,
         customerName: name,
         customerPhone: phone,
-        vehicleNumber,
+        customerEmail: email || '',
+        vehicleNumber: vehicleNumber || '',
         actualPrice: String(price),
         bookingNotes: notes || '',
       }
@@ -177,7 +178,7 @@ app.post('/api/verify-payment', async (req, res) => {
     razorpay_payment_id,
     razorpay_signature,
     bookingId,
-    service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes
+    service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes
   } = req.body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -197,7 +198,7 @@ app.post('/api/verify-payment', async (req, res) => {
   // Payment verified — save booking
   try {
     const booking = await saveBooking({
-      bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes
+      bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber: vehicleNumber || '', email: email || '', notes
     });
     res.json({ success: true, booking });
   } catch (err) {
@@ -211,9 +212,9 @@ app.post('/api/verify-payment', async (req, res) => {
 
 // Generate UPI QR code for desktop payment
 app.post('/api/create-upi-qr', async (req, res) => {
-  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes } = req.body;
+  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
 
-  if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone || !vehicleNumber) {
+  if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -240,7 +241,8 @@ app.post('/api/create-upi-qr', async (req, res) => {
       close_by: closeBy,
       notes: {
         bookingId, service, vehicleType, date, timeSlot,
-        customerName: name, customerPhone: phone, vehicleNumber,
+        customerName: name, customerPhone: phone, customerEmail: email || '',
+        vehicleNumber: vehicleNumber || '',
         actualPrice: String(price), bookingNotes: notes || ''
       }
     });
@@ -271,7 +273,7 @@ app.post('/api/close-qr', async (req, res) => {
 
 // Poll payment status (for UPI QR and collect flows)
 app.post('/api/payment-status', async (req, res) => {
-  const { orderId, qrCodeId, bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes } = req.body;
+  const { orderId, qrCodeId, bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
 
   try {
     let paid = false;
@@ -288,7 +290,7 @@ app.post('/api/payment-status', async (req, res) => {
 
     if (paid) {
       const booking = await saveBooking({
-        bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, notes
+        bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber: vehicleNumber || '', email: email || '', notes
       });
       return res.json({ status: 'paid', booking });
     }
@@ -358,7 +360,7 @@ async function sendWhatsAppNotifications(booking) {
           parameters: [
             { type: 'text', text: booking.name },
             { type: 'text', text: booking.phone },
-            { type: 'text', text: booking.vehicleNumber },
+            { type: 'text', text: booking.email || 'N/A' },
             { type: 'text', text: booking.service },
             { type: 'text', text: booking.vehicleType },
             { type: 'text', text: booking.date },
