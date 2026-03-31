@@ -394,7 +394,7 @@
       const isUnavailable = isBooked || isPast;
       const isSel = state.timeSlot === slot && !isUnavailable;
       const cls = isUnavailable ? 'booked' : isSel ? 'selected' : '';
-      const label = isPast ? ' (Past)' : isBooked ? ' (Booked)' : '';
+      const label = isBooked ? ' (Booked)' : '';
       html += `<div class="time-slot ${cls}" data-slot="${slot}">${slot}${label}</div>`;
     });
     grid.innerHTML = html;
