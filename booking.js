@@ -108,6 +108,7 @@
       case 4: renderStep4(); break;
       case 5: renderStep5(); break;
       case 6: renderStep6(); break;
+      case 7: renderStep7(); break;
     }
     // Scroll modal to top on step change
     document.getElementById('booking-modal').scrollTop = 0;
@@ -115,9 +116,9 @@
 
   function renderProgress() {
     const el = document.getElementById('booking-progress');
-    if (state.step === 6) { el.innerHTML = ''; return; }
+    if (state.step === 7) { el.innerHTML = ''; return; }
     let html = '';
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 6; i++) {
       const cls = i < state.step ? 'done' : i === state.step ? 'active' : '';
       html += `<div class="booking-progress-step ${cls}"></div>`;
     }
@@ -128,61 +129,33 @@
   function renderStep1() {
     const body = document.getElementById('booking-body');
     let html = `
-      <div class="step-label">Step 1 of 5</div>
+      <div class="step-label">Step 1 of 6</div>
       <div class="step-title">Select a Service</div>
       <div class="service-cards">
     `;
     SERVICES.forEach(s => {
       const sel = state.service && state.service.id === s.id ? 'selected' : '';
-      const priceRange = `\u20B9${Math.min(...Object.values(s.prices))} — \u20B9${Math.max(...Object.values(s.prices))}`;
+      const priceRange = `\u20B9${Math.min(...Object.values(s.prices))} \u2014 \u20B9${Math.max(...Object.values(s.prices))}`;
       html += `
         <div class="service-card ${sel}" data-service="${s.id}">
           <div class="service-card-name">${s.name}</div>
-          <div class="service-card-desc">${s.desc} &nbsp;·&nbsp; ${priceRange}</div>
+          <div class="service-card-desc">${s.desc} &nbsp;\u00B7&nbsp; ${priceRange}</div>
         </div>
       `;
     });
     html += '</div>';
 
-    if (state.service) {
-      html += `
-        <div style="margin-top:1.25rem;">
-          <div class="step-label">Vehicle Type</div>
-          <div class="vehicle-options">
-      `;
-      VEHICLE_TYPES.forEach(v => {
-        const price = state.service.prices[v.id];
-        const sel = state.vehicleType && state.vehicleType.id === v.id ? 'selected' : '';
-        html += `
-          <div class="vehicle-option ${sel}" data-vehicle="${v.id}">
-            <div class="vehicle-option-type">${v.name}</div>
-            <div class="vehicle-option-price">\u20B9${price.toLocaleString('en-IN')}</div>
-          </div>
-        `;
-      });
-      html += '</div></div>';
-    }
-
     body.innerHTML = html;
 
-    // Events
     body.querySelectorAll('.service-card').forEach(card => {
       card.addEventListener('click', () => {
         const svc = SERVICES.find(s => s.id === card.dataset.service);
+        if (state.service && state.service.id !== svc.id) {
+          state.vehicleType = null;
+          state.price = null;
+        }
         state.service = svc;
-        state.vehicleType = null;
-        state.price = null;
         render();
-      });
-    });
-    body.querySelectorAll('.vehicle-option').forEach(opt => {
-      opt.addEventListener('click', () => {
-        const vt = VEHICLE_TYPES.find(v => v.id === opt.dataset.vehicle);
-        state.vehicleType = vt;
-        state.price = state.service.prices[vt.id];
-        body.querySelectorAll('.vehicle-option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-        renderFooter1();
       });
     });
 
@@ -191,19 +164,67 @@
 
   function renderFooter1() {
     const footer = document.getElementById('booking-footer');
-    const canNext = state.service && state.vehicleType && state.price;
     footer.innerHTML = `
-      <button class="booking-btn booking-btn-next" ${canNext ? '' : 'disabled'} id="btn-next-1">
+      <button class="booking-btn booking-btn-next" ${state.service ? '' : 'disabled'} id="btn-next-1">
         Continue
       </button>
     `;
-    if (canNext) {
+    if (state.service) {
       document.getElementById('btn-next-1').addEventListener('click', () => { state.step = 2; render(); });
     }
   }
 
-  // ── STEP 2: Select Date ──
+  // ── STEP 2: Select Vehicle Type ──
   function renderStep2() {
+    const body = document.getElementById('booking-body');
+    let html = `
+      <div class="step-label">Step 2 of 6</div>
+      <div class="step-title">Select Vehicle Type</div>
+      <div class="vehicle-options">
+    `;
+    VEHICLE_TYPES.forEach(v => {
+      const price = state.service.prices[v.id];
+      const sel = state.vehicleType && state.vehicleType.id === v.id ? 'selected' : '';
+      html += `
+        <div class="vehicle-option ${sel}" data-vehicle="${v.id}">
+          <div class="vehicle-option-type">${v.name}</div>
+          <div class="vehicle-option-price">\u20B9${price.toLocaleString('en-IN')}</div>
+        </div>
+      `;
+    });
+    html += '</div>';
+
+    body.innerHTML = html;
+
+    body.querySelectorAll('.vehicle-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const vt = VEHICLE_TYPES.find(v => v.id === opt.dataset.vehicle);
+        state.vehicleType = vt;
+        state.price = state.service.prices[vt.id];
+        body.querySelectorAll('.vehicle-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        renderFooter2();
+      });
+    });
+
+    renderFooter2();
+  }
+
+  function renderFooter2() {
+    const footer = document.getElementById('booking-footer');
+    const canNext = state.vehicleType && state.price;
+    footer.innerHTML = `
+      <button class="booking-btn booking-btn-back" id="btn-back-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
+      <button class="booking-btn booking-btn-next" ${canNext ? '' : 'disabled'} id="btn-next-2">Continue</button>
+    `;
+    document.getElementById('btn-back-2').addEventListener('click', () => { state.step = 1; render(); });
+    if (canNext) {
+      document.getElementById('btn-next-2').addEventListener('click', () => { state.step = 3; render(); });
+    }
+  }
+
+  // ── STEP 3: Select Date ──
+  function renderStep3() {
     const body = document.getElementById('booking-body');
     const today = new Date();
     const tomorrow = new Date(today);
@@ -229,7 +250,7 @@
       const canNext = new Date(viewYear, viewMonth + 1, 1) <= maxDate;
 
       let html = `
-        <div class="step-label">Step 2 of 5</div>
+        <div class="step-label">Step 3 of 6</div>
         <div class="step-title">Select a Date</div>
         <div class="cal">
           <div class="cal-header">
@@ -292,37 +313,37 @@
           state.timeSlot = null;
           body.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
           cell.classList.add('selected');
-          renderFooter2();
+          renderFooter3();
         });
       });
     }
     attachEvents();
-    renderFooter2();
+    renderFooter3();
   }
 
-  function renderFooter2() {
+  function renderFooter3() {
     const footer = document.getElementById('booking-footer');
     footer.innerHTML = `
       <button class="booking-btn booking-btn-back" id="btn-back-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${state.date ? '' : 'disabled'} id="btn-next-2">Continue</button>
     `;
-    document.getElementById('btn-back-2').addEventListener('click', () => { state.step = 1; render(); });
+    document.getElementById('btn-back-2').addEventListener('click', () => { state.step = 2; render(); });
     if (state.date) {
-      document.getElementById('btn-next-2').addEventListener('click', () => { state.step = 3; render(); });
+      document.getElementById('btn-next-2').addEventListener('click', () => { state.step = 4; render(); });
     }
   }
 
-  // ── STEP 3: Select Time Slot ──
-  async function renderStep3() {
+  // ── STEP 4: Select Time Slot ──
+  async function renderStep4() {
     const body = document.getElementById('booking-body');
     body.innerHTML = `
-      <div class="step-label">Step 3 of 5</div>
+      <div class="step-label">Step 4 of 6</div>
       <div class="step-title">Select a Time Slot</div>
       <div class="time-slots" id="time-slots-grid">
         <div style="grid-column:1/-1;text-align:center;color:#888;font-size:0.85rem;padding:1rem;">Loading available slots...</div>
       </div>
     `;
-    renderFooter3();
+    renderFooter4();
 
     // Fetch booked slots
     try {
@@ -351,23 +372,23 @@
     });
   }
 
-  function renderFooter3() {
+  function renderFooter4() {
     const footer = document.getElementById('booking-footer');
     footer.innerHTML = `
       <button class="booking-btn booking-btn-back" id="btn-back-3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${state.timeSlot ? '' : 'disabled'} id="btn-next-3">Continue</button>
     `;
-    document.getElementById('btn-back-3').addEventListener('click', () => { state.step = 2; render(); });
+    document.getElementById('btn-back-3').addEventListener('click', () => { state.step = 3; render(); });
     if (state.timeSlot) {
-      document.getElementById('btn-next-3').addEventListener('click', () => { state.step = 4; render(); });
+      document.getElementById('btn-next-3').addEventListener('click', () => { state.step = 5; render(); });
     }
   }
 
-  // ── STEP 4: Customer Details ──
-  function renderStep4() {
+  // ── STEP 5: Customer Details ──
+  function renderStep5() {
     const body = document.getElementById('booking-body');
     body.innerHTML = `
-      <div class="step-label">Step 4 of 5</div>
+      <div class="step-label">Step 5 of 6</div>
       <div class="step-title">Your Details</div>
       <div class="form-group">
         <label>Full Name</label>
@@ -397,27 +418,27 @@
       state.phone = phoneEl.value.trim();
       state.vehicleNumber = vehicleEl.value.trim().toUpperCase();
       state.notes = notesEl.value.trim();
-      renderFooter4();
+      renderFooter5();
     }
 
     [nameEl, phoneEl, vehicleEl, notesEl].forEach(el => el.addEventListener('input', sync));
-    renderFooter4();
+    renderFooter5();
   }
 
-  function renderFooter4() {
+  function renderFooter5() {
     const footer = document.getElementById('booking-footer');
     const valid = state.name && /^[6-9]\d{9}$/.test(state.phone) && state.vehicleNumber.length >= 4;
     footer.innerHTML = `
       <button class="booking-btn booking-btn-back" id="btn-back-4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
       <button class="booking-btn booking-btn-next" ${valid ? '' : 'disabled'} id="btn-next-4">Review Booking</button>
     `;
-    document.getElementById('btn-back-4').addEventListener('click', () => { state.step = 3; render(); });
+    document.getElementById('btn-back-4').addEventListener('click', () => { state.step = 4; render(); });
     if (valid) {
-      document.getElementById('btn-next-4').addEventListener('click', () => { state.step = 5; render(); });
+      document.getElementById('btn-next-4').addEventListener('click', () => { state.step = 6; render(); });
     }
   }
 
-  // ── STEP 5: Review & Payment ──
+  // ── STEP 6: Review & Payment ──
   let razorpayKeyId = null;
   let activeRzpInstance = null;
   let paymentPollInterval = null;
@@ -460,7 +481,7 @@
           stopPaymentPolling();
           activeQrCodeId = null;
           state.booking = data.booking;
-          state.step = 6;
+          state.step = 7;
           render();
         }
       } catch (e) {
@@ -482,7 +503,7 @@
     activeRzpInstance = null;
   }
 
-  function renderStep5() {
+  function renderStep6() {
     const body = document.getElementById('booking-body');
     const formattedDate = formatDate(state.date);
     const priceDisplay = state.price.toLocaleString('en-IN');
@@ -553,7 +574,7 @@
       <div id="step5-content">
         <div class="step5-top-row">
           <div>
-            <div class="step-label">Step 5 of 5</div>
+            <div class="step-label">Step 6 of 6</div>
             <div class="step-title" style="margin-bottom:0">Review & Pay</div>
           </div>
           <button class="step5-back-link" id="btn-back-5">
@@ -714,7 +735,7 @@
     document.getElementById('booking-footer').innerHTML = '';
     document.getElementById('btn-back-5').addEventListener('click', () => {
       cleanupPaymentState();
-      state.step = 4;
+      state.step = 5;
       render();
     });
   }
@@ -879,7 +900,7 @@
 
           if (verifyData.success) {
             state.booking = verifyData.booking;
-            state.step = 6;
+            state.step = 7;
             render();
           } else {
             throw new Error(verifyData.error || 'Payment verification failed');
@@ -910,8 +931,8 @@
     }
   }
 
-  // ── STEP 6: Confirmation ──
-  function renderStep6() {
+  // ── STEP 7: Confirmation ──
+  function renderStep7() {
     const body = document.getElementById('booking-body');
     const b = state.booking;
     const formattedDate = formatDate(b.date);
