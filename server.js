@@ -144,7 +144,14 @@ app.post('/api/send-otp', async (req, res) => {
 
   try {
     // Check slot availability
-    const rows = await getAllRows();
+    let rows;
+    try {
+      rows = await getAllRows();
+    } catch (sheetsErr) {
+      console.error('Google Sheets error in send-otp:', sheetsErr.message, sheetsErr.stack);
+      return res.status(500).json({ error: 'Unable to check slot availability. Please try again.' });
+    }
+
     const slotTaken = rows.some(
       r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
     );
@@ -168,6 +175,7 @@ app.post('/api/send-otp', async (req, res) => {
 
     const otp = generateOtp();
     const bookingId = generateBookingId();
+    console.log(`Generated OTP for ${phone}: bookingId=${bookingId}`);
 
     otpStore.set(phone, {
       code: otp,
@@ -187,7 +195,7 @@ app.post('/api/send-otp', async (req, res) => {
       res.status(500).json({ error: 'Failed to send OTP. Please check your WhatsApp number.' });
     }
   } catch (err) {
-    console.error('Error in send-otp:', err.message);
+    console.error('Error in send-otp:', err.message, err.stack);
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
@@ -281,7 +289,7 @@ async function sendWhatsAppOtp(phone, otp) {
   }
 }
 
-// Send booking confirmation notifications
+// Send booking confirmation notifications (plain text — no templates needed)
 async function sendWhatsAppNotifications(booking) {
   const token = process.env.META_WHATSAPP_TOKEN;
   const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
@@ -293,77 +301,72 @@ async function sendWhatsAppNotifications(booking) {
   }
 
   const apiUrl = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
-
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
   };
 
-  const customerPayload = {
-    messaging_product: 'whatsapp',
-    to: booking.phone,
-    type: 'template',
-    template: {
-      name: 'customer_booking_confirmation',
-      language: { code: 'en' },
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: booking.name },
-            { type: 'text', text: booking.id },
-            { type: 'text', text: booking.service },
-            { type: 'text', text: booking.vehicleType },
-            { type: 'text', text: booking.date },
-            { type: 'text', text: booking.timeSlot },
-            { type: 'text', text: `${booking.price}` }
-          ]
-        }
-      ]
-    }
-  };
-
-  const ownerPayload = {
-    messaging_product: 'whatsapp',
-    to: ownerNumber,
-    type: 'template',
-    template: {
-      name: 'owner_booking_alert',
-      language: { code: 'en' },
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: booking.name },
-            { type: 'text', text: booking.phone },
-            { type: 'text', text: booking.email || 'N/A' },
-            { type: 'text', text: booking.service },
-            { type: 'text', text: booking.vehicleType },
-            { type: 'text', text: booking.date },
-            { type: 'text', text: booking.timeSlot },
-            { type: 'text', text: `${booking.price}` },
-            { type: 'text', text: booking.id }
-          ]
-        }
-      ]
-    }
-  };
+  // Customer confirmation — plain text
+  const customerBody = [
+    `✅ *Booking Confirmed — RoadRunners Detailing*`,
+    ``,
+    `🆔  ${booking.id}`,
+    `👤  ${booking.name}`,
+    `✨  ${booking.service}`,
+    `🚗  ${booking.vehicleType}`,
+    `💰  ₹${booking.price}`,
+    `📅  ${booking.date}`,
+    `🕐  ${booking.timeSlot}`,
+    ``,
+    `See you at *RoadRunners Detailing*! 🚗`
+  ].join('\n');
 
   try {
-    const customerRes = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(customerPayload) });
+    const customerRes = await fetch(apiUrl, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: booking.phone,
+        type: 'text',
+        text: { body: customerBody }
+      })
+    });
     const customerData = await customerRes.json();
-    if (customerData.error) console.error('Customer WhatsApp error:', customerData.error);
-    else console.log('Customer WhatsApp sent:', customerData);
+    if (customerData.error) console.error('Customer WhatsApp error:', JSON.stringify(customerData.error));
+    else console.log('Customer confirmation sent to:', booking.phone);
   } catch (err) {
     console.error('Customer WhatsApp fetch error:', err.message);
   }
 
+  // Owner notification — plain text
   if (ownerNumber) {
+    const ownerBody = [
+      `✅ *New Booking — RoadRunners Detailing*`,
+      ``,
+      `🆔  ${booking.id}`,
+      `👤  ${booking.name}`,
+      `📞  ${booking.phone}`,
+      `📧  ${booking.email || 'N/A'}`,
+      `✨  ${booking.service}`,
+      `🚗  ${booking.vehicleType}`,
+      `💰  ₹${booking.price}`,
+      `📅  ${booking.date}`,
+      `🕐  ${booking.timeSlot}`
+    ].join('\n');
+
     try {
-      const ownerRes = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(ownerPayload) });
+      const ownerRes = await fetch(apiUrl, {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: ownerNumber,
+          type: 'text',
+          text: { body: ownerBody }
+        })
+      });
       const ownerData = await ownerRes.json();
-      if (ownerData.error) console.error('Owner WhatsApp error:', ownerData.error);
-      else console.log('Owner WhatsApp sent:', ownerData);
+      if (ownerData.error) console.error('Owner WhatsApp error:', JSON.stringify(ownerData.error));
+      else console.log('Owner notification sent to:', ownerNumber);
     } catch (err) {
       console.error('Owner WhatsApp fetch error:', err.message);
     }
