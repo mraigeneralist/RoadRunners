@@ -673,6 +673,10 @@
           notes: state.notes
         })
       });
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Server error. Please try again.');
+      }
       const data = await res.json();
 
       if (!res.ok) {
@@ -746,6 +750,10 @@
           otp: code
         })
       });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        throw new Error('Server error. Please try again.');
+      }
       const data = await res.json();
 
       if (!res.ok) {
