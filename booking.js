@@ -100,7 +100,7 @@
   }
 
   function closeBooking() {
-    cleanupPaymentState();
+    stopOtpResendTimer();
     const overlay = document.getElementById('booking-overlay');
     overlay.classList.remove('active');
     setTimeout(() => {
@@ -481,141 +481,28 @@
     }
   }
 
-  // ── STEP 6: Review & Payment ──
-  let razorpayKeyId = null;
-  let activeRzpInstance = null;
-  let paymentPollInterval = null;
-  let activeQrCodeId = null;
-  let qrCountdownInterval = null;
+  // ── STEP 6: Review & Confirm ──
+  let otpResendTimer = null;
 
-  function isMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  }
-
-  async function fetchRazorpayKey() {
-    if (razorpayKeyId) return razorpayKeyId;
-    try {
-      const res = await fetch(`${API_BASE}/api/config`);
-      const data = await res.json();
-      if (!res.ok || !data.razorpayKeyId) {
-        console.error('Payment config error:', data.error || 'No razorpayKeyId in response');
-        return null;
-      }
-      razorpayKeyId = data.razorpayKeyId;
-      return razorpayKeyId;
-    } catch (err) {
-      console.error('Failed to fetch payment config:', err.message);
-      return null;
+  function stopOtpResendTimer() {
+    if (otpResendTimer) {
+      clearInterval(otpResendTimer);
+      otpResendTimer = null;
     }
-  }
-
-  function stopPaymentPolling() {
-    if (paymentPollInterval) {
-      clearInterval(paymentPollInterval);
-      paymentPollInterval = null;
-    }
-  }
-
-  function stopQrCountdown() {
-    if (qrCountdownInterval) {
-      clearInterval(qrCountdownInterval);
-      qrCountdownInterval = null;
-    }
-  }
-
-  function startPaymentPolling(params) {
-    stopPaymentPolling();
-    let pollHandled = false;
-    paymentPollInterval = setInterval(async () => {
-      if (pollHandled) return;
-      try {
-        const res = await fetch(`${API_BASE}/api/payment-status`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(params)
-        });
-        const data = await res.json();
-        if (data.status === 'paid') {
-          pollHandled = true;
-          stopPaymentPolling();
-          stopQrCountdown();
-          activeQrCodeId = null;
-          state.booking = data.booking;
-          state.step = 7;
-          render();
-        }
-      } catch (e) {
-        // Silently retry on next interval
-      }
-    }, 3000);
-  }
-
-  function cleanupPaymentState() {
-    stopPaymentPolling();
-    stopQrCountdown();
-    if (activeQrCodeId) {
-      fetch(`${API_BASE}/api/close-qr`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCodeId: activeQrCodeId })
-      }).catch(() => {});
-      activeQrCodeId = null;
-    }
-    activeRzpInstance = null;
   }
 
   function renderStep6() {
+    stopOtpResendTimer();
     const body = document.getElementById('booking-body');
     const formattedDate = formatDate(state.date);
     const priceDisplay = state.price.toLocaleString('en-IN');
-    const mobile = isMobile();
-
-    // Build UPI panel — UPI ID input only (mobile & desktop), QR on desktop
-    let upiPanelHtml;
-    if (mobile) {
-      upiPanelHtml = `
-        <div class="pay-panel active" id="panel-upi">
-          <div class="form-group">
-            <label>UPI ID</label>
-            <input type="text" id="pay-upi-id" placeholder="yourname@okicici" autocomplete="off" spellcheck="false">
-          </div>
-          <button class="booking-btn booking-btn-pay" id="btn-pay-upi">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Pay \u20B9${priceDisplay}
-          </button>
-        </div>`;
-    } else {
-      upiPanelHtml = `
-        <div class="pay-panel active" id="panel-upi">
-          <div class="upi-qr-section" id="upi-qr-section">
-            <div class="upi-qr-title">Scan with any UPI app</div>
-            <div class="upi-qr-container" id="upi-qr-container">
-              <div class="upi-qr-loading">
-                <div class="pay-spinner" style="width:24px;height:24px;border-width:2px;"></div>
-                <span>Generating QR code...</span>
-              </div>
-            </div>
-            <div class="upi-qr-amount">\u20B9${priceDisplay}</div>
-            <div class="upi-qr-timer" id="upi-qr-timer"></div>
-          </div>
-          <div class="upi-apps-divider"><span>or enter UPI ID</span></div>
-          <div class="form-group">
-            <label>UPI ID</label>
-            <input type="text" id="pay-upi-id" placeholder="yourname@okicici" autocomplete="off" spellcheck="false">
-          </div>
-          <button class="booking-btn booking-btn-pay" id="btn-pay-upi">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Pay \u20B9${priceDisplay}
-          </button>
-        </div>`;
-    }
 
     body.innerHTML = `
-      <div id="step5-content">
+      <div id="step6-content">
         <div class="step5-top-row">
           <div>
-            <div class="step-label">Step 6 of 6</div>
-            <div class="step-title" style="margin-bottom:0">Review & Pay</div>
+            <div class="step-label">Step 6 of 7</div>
+            <div class="step-title" style="margin-bottom:0">Review & Confirm</div>
           </div>
           <button class="step5-back-link" id="btn-back-5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
@@ -645,366 +532,244 @@
           </div>
         </div>
 
-        <div class="pay-method-tabs">
-          <button class="pay-method-tab active" data-tab="upi">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            UPI
-          </button>
-          <button class="pay-method-tab" data-tab="card">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Card
-          </button>
-        </div>
-
-        ${upiPanelHtml}
-
-        <div class="pay-panel" id="panel-card">
-          <div class="card-panel-info">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4a017" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <p>You'll be redirected to Razorpay's secure payment page to enter your card details.</p>
-          </div>
-          <button class="booking-btn booking-btn-pay" id="btn-pay-card">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Pay \u20B9${priceDisplay} with Card
-          </button>
-        </div>
-
-        <div class="pay-secure-note">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Secured by Razorpay
+        <button class="booking-btn" id="btn-confirm-booking" style="margin-top:1rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Confirm Booking
+        </button>
+        <div class="otp-note" style="text-align:center;color:#aaa;font-size:0.75rem;margin-top:0.5rem;">
+          A verification code will be sent to your WhatsApp
         </div>
       </div>
 
-      <div class="pay-loading" id="pay-loading">
+      <div id="otp-screen" style="display:none;">
+        <div class="step-label">Step 6 of 7</div>
+        <div class="step-title">Verify Your Number</div>
+        <p class="otp-instruction">We've sent a 6-digit code to<br><strong>+91 ${state.phone}</strong> on WhatsApp</p>
+
+        <div class="otp-input-group" id="otp-input-group">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="0" autocomplete="off">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="1" autocomplete="off">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="2" autocomplete="off">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="3" autocomplete="off">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="4" autocomplete="off">
+          <input type="text" inputmode="numeric" maxlength="1" class="otp-digit" data-idx="5" autocomplete="off">
+        </div>
+
+        <div class="otp-error" id="otp-error" style="display:none;"></div>
+
+        <button class="booking-btn" id="btn-verify-otp" disabled>Verify & Book</button>
+
+        <div class="otp-resend" id="otp-resend">
+          <span id="otp-resend-timer">Resend code in <strong>30s</strong></span>
+          <button class="otp-resend-btn" id="btn-resend-otp" style="display:none;">Resend Code</button>
+        </div>
+
+        <button class="otp-back-link" id="btn-back-review">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Back to Review
+        </button>
+      </div>
+
+      <div class="otp-loading" id="otp-loading">
         <div class="pay-spinner"></div>
-        <div class="pay-loading-text" id="pay-loading-text">Processing payment...</div>
-        <button class="pay-cancel-btn" id="pay-cancel-btn" style="display:none">Cancel</button>
+        <div class="otp-loading-text" id="otp-loading-text">Sending verification code...</div>
       </div>
     `;
 
-    // Tab switching
-    body.querySelectorAll('.pay-method-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        body.querySelectorAll('.pay-method-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        body.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
-      });
-    });
+    const footer = document.getElementById('booking-footer');
+    footer.innerHTML = '';
 
-    // UPI Pay button (collect flow)
-    document.getElementById('btn-pay-upi').addEventListener('click', () => {
-      const vpa = document.getElementById('pay-upi-id').value.trim();
-      if (!vpa || !vpa.includes('@')) {
-        alert('Please enter a valid UPI ID (e.g. yourname@okicici)');
-        return;
-      }
-      if (!mobile && activeQrCodeId) {
-        cleanupPaymentState();
-      }
-      processPayment('upi_collect', { vpa });
-    });
-
-    // Card Pay button — opens Razorpay Standard Checkout
-    document.getElementById('btn-pay-card').addEventListener('click', () => {
-      if (!mobile && activeQrCodeId) {
-        cleanupPaymentState();
-      }
-      processPayment('card', {});
-    });
-
-    // Desktop: auto-generate QR code
-    if (!mobile) {
-      loadUpiQrCode();
-    }
-
-    document.getElementById('booking-footer').innerHTML = '';
+    // Edit Details button
     document.getElementById('btn-back-5').addEventListener('click', () => {
-      cleanupPaymentState();
+      stopOtpResendTimer();
       state.step = 5;
       render();
     });
+
+    // Confirm Booking button — sends OTP
+    document.getElementById('btn-confirm-booking').addEventListener('click', sendOtp);
+
+    // OTP digit inputs — auto-advance, paste support
+    setupOtpInputs();
+
+    // Verify OTP button
+    document.getElementById('btn-verify-otp').addEventListener('click', verifyOtp);
+
+    // Resend OTP
+    document.getElementById('btn-resend-otp').addEventListener('click', sendOtp);
+
+    // Back to review
+    document.getElementById('btn-back-review').addEventListener('click', () => {
+      stopOtpResendTimer();
+      document.getElementById('otp-screen').style.display = 'none';
+      document.getElementById('step6-content').style.display = '';
+      document.getElementById('otp-loading').classList.remove('active');
+    });
   }
 
-  async function loadUpiQrCode() {
-    const container = document.getElementById('upi-qr-container');
-    if (!container) return;
+  function setupOtpInputs() {
+    const digits = document.querySelectorAll('.otp-digit');
+    const verifyBtn = document.getElementById('btn-verify-otp');
 
-    const bookingData = {
-      service: state.service.name,
-      vehicleType: state.vehicleType.name,
-      price: state.price,
-      date: state.date,
-      timeSlot: state.timeSlot,
-      name: state.name,
-      phone: '91' + state.phone,
-      vehicleNumber: '',
-      email: state.email,
-      notes: state.notes
-    };
+    function checkComplete() {
+      const code = Array.from(digits).map(d => d.value).join('');
+      verifyBtn.disabled = code.length !== 6;
+    }
+
+    digits.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        e.target.value = val.charAt(0) || '';
+        if (val && idx < 5) digits[idx + 1].focus();
+        checkComplete();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          digits[idx - 1].focus();
+          digits[idx - 1].value = '';
+          checkComplete();
+        }
+      });
+
+      // Handle paste
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+        pasted.split('').forEach((ch, i) => {
+          if (digits[i]) digits[i].value = ch;
+        });
+        if (pasted.length > 0) digits[Math.min(pasted.length, 5)].focus();
+        checkComplete();
+      });
+    });
+  }
+
+  async function sendOtp() {
+    const content = document.getElementById('step6-content');
+    const otpScreen = document.getElementById('otp-screen');
+    const loading = document.getElementById('otp-loading');
+    const loadingText = document.getElementById('otp-loading-text');
+    const errorEl = document.getElementById('otp-error');
+
+    content.style.display = 'none';
+    otpScreen.style.display = 'none';
+    loading.classList.add('active');
+    loadingText.textContent = 'Sending verification code...';
 
     try {
-      const res = await fetch(`${API_BASE}/api/create-upi-qr`, {
+      const res = await fetch(`${API_BASE}/api/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
+        body: JSON.stringify({
+          service: state.service.name,
+          vehicleType: state.vehicleType.name,
+          price: state.price,
+          date: state.date,
+          timeSlot: state.timeSlot,
+          name: state.name,
+          phone: '91' + state.phone,
+          email: state.email,
+          notes: state.notes
+        })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate QR');
 
-      activeQrCodeId = data.qrCodeId;
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send OTP');
+      }
 
-      container.innerHTML = `<img class="upi-qr-image" src="${data.qrImageUrl}" alt="UPI QR Code">`;
+      // Show OTP screen
+      loading.classList.remove('active');
+      otpScreen.style.display = '';
 
-      // Start QR expiry countdown (15 minutes)
-      let secondsLeft = 15 * 60;
-      const timerEl = document.getElementById('upi-qr-timer');
-      stopQrCountdown();
-      qrCountdownInterval = setInterval(() => {
-        secondsLeft--;
-        if (timerEl) {
-          const mins = Math.floor(secondsLeft / 60);
-          const secs = secondsLeft % 60;
-          timerEl.textContent = `Expires in ${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-        if (secondsLeft <= 0) {
-          stopQrCountdown();
-          stopPaymentPolling();
-          activeQrCodeId = null;
-          const section = document.getElementById('upi-qr-section');
-          if (section) {
-            section.innerHTML = `
-              <div class="upi-qr-title">QR Code Expired</div>
-              <div style="padding:1.5rem 0;">
-                <button class="booking-btn booking-btn-pay" id="btn-refresh-qr" style="width:auto;padding:0.7rem 1.5rem;font-size:0.75rem;">Generate New QR</button>
-              </div>
-            `;
-            document.getElementById('btn-refresh-qr').addEventListener('click', loadUpiQrCode);
-          }
-        }
-      }, 1000);
+      // Clear previous OTP inputs
+      document.querySelectorAll('.otp-digit').forEach(d => { d.value = ''; });
+      document.getElementById('btn-verify-otp').disabled = true;
+      if (errorEl) { errorEl.style.display = 'none'; errorEl.textContent = ''; }
 
-      // Start polling for QR payment
-      startPaymentPolling({
-        qrCodeId: data.qrCodeId,
-        bookingId: data.bookingId,
-        ...bookingData
-      });
+      // Focus first digit
+      const firstDigit = document.querySelector('.otp-digit[data-idx="0"]');
+      if (firstDigit) firstDigit.focus();
+
+      // Start resend countdown
+      startResendCountdown();
+
     } catch (err) {
-      container.innerHTML = `<div class="upi-qr-error">Could not generate QR code.<br>Please use UPI ID below.</div>`;
+      loading.classList.remove('active');
+      content.style.display = '';
+      alert(err.message || 'Failed to send verification code. Please try again.');
     }
   }
 
-  async function processPayment(method, details) {
-    const content = document.getElementById('step5-content');
-    const loading = document.getElementById('pay-loading');
-    const loadingText = document.getElementById('pay-loading-text');
-    const cancelBtn = document.getElementById('pay-cancel-btn');
+  function startResendCountdown() {
+    stopOtpResendTimer();
+    const timerSpan = document.getElementById('otp-resend-timer');
+    const resendBtn = document.getElementById('btn-resend-otp');
+    let seconds = 30;
 
-    content.style.display = 'none';
+    if (timerSpan) { timerSpan.style.display = ''; timerSpan.innerHTML = `Resend code in <strong>${seconds}s</strong>`; }
+    if (resendBtn) resendBtn.style.display = 'none';
+
+    otpResendTimer = setInterval(() => {
+      seconds--;
+      if (timerSpan) timerSpan.innerHTML = `Resend code in <strong>${seconds}s</strong>`;
+      if (seconds <= 0) {
+        stopOtpResendTimer();
+        if (timerSpan) timerSpan.style.display = 'none';
+        if (resendBtn) resendBtn.style.display = '';
+      }
+    }, 1000);
+  }
+
+  async function verifyOtp() {
+    const digits = document.querySelectorAll('.otp-digit');
+    const code = Array.from(digits).map(d => d.value).join('');
+    const errorEl = document.getElementById('otp-error');
+    const verifyBtn = document.getElementById('btn-verify-otp');
+    const otpScreen = document.getElementById('otp-screen');
+    const loading = document.getElementById('otp-loading');
+    const loadingText = document.getElementById('otp-loading-text');
+
+    if (code.length !== 6) return;
+
+    otpScreen.style.display = 'none';
     loading.classList.add('active');
-    loadingText.textContent = 'Creating order...';
-    cancelBtn.style.display = 'none';
-
-    const bookingData = {
-      service: state.service.name,
-      vehicleType: state.vehicleType.name,
-      price: state.price,
-      date: state.date,
-      timeSlot: state.timeSlot,
-      name: state.name,
-      phone: '91' + state.phone,
-      vehicleNumber: '',
-      email: state.email,
-      notes: state.notes
-    };
-
-    let paymentHandled = false;
+    loadingText.textContent = 'Verifying...';
 
     try {
-      const keyId = await fetchRazorpayKey();
-      if (!keyId) throw new Error('Could not load payment config');
-
-      const orderRes = await fetch(`${API_BASE}/api/create-order`, {
+      const res = await fetch(`${API_BASE}/api/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
+        body: JSON.stringify({
+          phone: '91' + state.phone,
+          otp: code
+        })
       });
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || 'Failed to create order');
+      const data = await res.json();
 
-      // ── Card: Standard Checkout popup ──
-      if (method === 'card') {
-        loadingText.textContent = 'Opening payment page...';
-
-        const options = {
-          key: keyId,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          order_id: orderData.orderId,
-          name: 'RoadRunners Detailing',
-          description: state.service.name,
-          prefill: {
-            name: state.name,
-            email: state.email || '',
-            contact: '91' + state.phone,
-            method: 'card'
-          },
-          method: {
-            upi: false,
-            netbanking: false,
-            wallet: false,
-            card: true
-          },
-          handler: async function (response) {
-            if (paymentHandled) return;
-            paymentHandled = true;
-            loading.classList.add('active');
-            loadingText.textContent = 'Verifying payment...';
-
-            try {
-              const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  bookingId: orderData.bookingId,
-                  ...bookingData
-                })
-              });
-              const verifyData = await verifyRes.json();
-              if (verifyData.success) {
-                state.booking = verifyData.booking;
-                state.step = 7;
-                render();
-              } else {
-                throw new Error(verifyData.error || 'Payment verification failed');
-              }
-            } catch (err) {
-              alert(err.message || 'Verification failed. Please contact support.');
-              loading.classList.remove('active');
-              content.style.display = '';
-            }
-          },
-          modal: {
-            ondismiss: function () {
-              if (!paymentHandled) {
-                loading.classList.remove('active');
-                content.style.display = '';
-              }
-            }
-          },
-          theme: { color: '#d4a017' }
-        };
-
-        const rzpStandard = new window.Razorpay(options);
-        rzpStandard.open();
-        return;
+      if (!res.ok) {
+        throw new Error(data.error || 'Verification failed');
       }
 
-      // ── UPI Collect: Custom Checkout ──
-      loadingText.textContent = 'Waiting for payment confirmation...';
-      cancelBtn.style.display = '';
-
-      const rzp = new window.Razorpay({ key: keyId });
-      activeRzpInstance = rzp;
-
-      const paymentPayload = {
-        order_id: orderData.orderId,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        email: state.email || 'booking@roadrunners.in',
-        contact: '91' + state.phone,
-        method: 'upi',
-        '_[flow]': 'collect',
-        'upi.vpa': details.vpa
-      };
-
-      // Start polling as backup confirmation
-      startPaymentPolling({
-        orderId: orderData.orderId,
-        bookingId: orderData.bookingId,
-        ...bookingData
-      });
-
-      // 10-minute timeout for UPI
-      const upiTimeout = setTimeout(() => {
-        if (!paymentHandled) {
-          stopPaymentPolling();
-          activeRzpInstance = null;
-          alert('Payment timed out. If you completed the payment, please contact support.');
-          loading.classList.remove('active');
-          content.style.display = '';
-          cancelBtn.style.display = 'none';
-        }
-      }, 10 * 60 * 1000);
-
-      // Cancel button handler
-      cancelBtn.onclick = () => {
-        clearTimeout(upiTimeout);
-        stopPaymentPolling();
-        activeRzpInstance = null;
-        loading.classList.remove('active');
-        content.style.display = '';
-        cancelBtn.style.display = 'none';
-      };
-
-      rzp.on('payment.success', async function (response) {
-        if (paymentHandled) return;
-        paymentHandled = true;
-        clearTimeout(upiTimeout);
-        stopPaymentPolling();
-        cancelBtn.style.display = 'none';
-        loadingText.textContent = 'Verifying payment...';
-
-        try {
-          const verifyRes = await fetch(`${API_BASE}/api/verify-payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              bookingId: orderData.bookingId,
-              ...bookingData
-            })
-          });
-          const verifyData = await verifyRes.json();
-
-          if (verifyData.success) {
-            state.booking = verifyData.booking;
-            state.step = 7;
-            render();
-          } else {
-            throw new Error(verifyData.error || 'Payment verification failed');
-          }
-        } catch (err) {
-          alert(err.message || 'Verification failed. Please contact support.');
-          loading.classList.remove('active');
-          content.style.display = '';
-        }
-      });
-
-      rzp.on('payment.error', function (response) {
-        if (paymentHandled) return;
-        clearTimeout(upiTimeout);
-        stopPaymentPolling();
-        const msg = response.error?.description || 'Payment failed. Please try again.';
-        alert(msg);
-        loading.classList.remove('active');
-        content.style.display = '';
-        cancelBtn.style.display = 'none';
-      });
-
-      rzp.createPayment(paymentPayload);
+      // Success — go to confirmation
+      stopOtpResendTimer();
+      state.booking = data.booking;
+      state.step = 7;
+      render();
 
     } catch (err) {
-      stopPaymentPolling();
-      alert(err.message || 'Something went wrong. Please try again.');
       loading.classList.remove('active');
-      content.style.display = '';
+      otpScreen.style.display = '';
+      if (errorEl) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = '';
+      }
+      // Clear inputs for retry
+      digits.forEach(d => { d.value = ''; });
+      verifyBtn.disabled = true;
+      const firstDigit = document.querySelector('.otp-digit[data-idx="0"]');
+      if (firstDigit) firstDigit.focus();
     }
   }
 
@@ -1040,7 +805,7 @@
             <span class="review-value">${b.timeSlot}</span>
           </div>
           <div class="review-row">
-            <span class="review-label">Amount Paid</span>
+            <span class="review-label">Amount</span>
             <span class="review-value" style="color:#d4a017;font-weight:800;">\u20B9${b.price.toLocaleString('en-IN')}</span>
           </div>
         </div>

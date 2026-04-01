@@ -4,11 +4,9 @@ const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
 const { google } = require('googleapis');
-const Razorpay = require('razorpay');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const TEST_MODE = process.env.TEST_MODE === 'true';
 
 // Google Sheets auth (service account)
 const auth = new google.auth.GoogleAuth({
@@ -23,23 +21,18 @@ const sheets = google.sheets({ version: 'v4', auth });
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
 const SHEET_RANGE = 'Sheet1';
 
-// Razorpay — resolve key names (support both RAZORPAY_KEY_ID and RAZORPAY_KEY_ID_LIVE)
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID_LIVE;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET_LIVE;
-
-if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-  console.error('⚠ RAZORPAY KEYS MISSING — Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in environment variables');
-  console.error('  Available env vars:', Object.keys(process.env).filter(k => k.includes('RAZORPAY')).join(', ') || '(none)');
-} else {
-  console.log(`Razorpay initialized with key: ${RAZORPAY_KEY_ID.substring(0, 12)}...`);
-}
-
-const razorpay = (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET)
-  ? new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET })
-  : null;
+const MAX_ACTIVE_BOOKINGS_PER_PHONE = 2;
 
 app.use(cors());
 app.use(express.json());
+
+// ── OTP Store (in-memory, expires after 5 minutes) ──
+// Key: phone number, Value: { code, expiresAt, attempts, bookingData }
+const otpStore = new Map();
+
+function generateOtp() {
+  return crypto.randomInt(100000, 999999).toString();
+}
 
 function generateBookingId() {
   const year = new Date().getFullYear();
@@ -58,11 +51,10 @@ async function getAllRows() {
 // In-memory lock to prevent concurrent saves for the same booking
 const saveLocks = new Map();
 
-// Helper: Save booking to Google Sheets (idempotent — safe to call multiple times)
+// Helper: Save booking to Google Sheets (idempotent)
 async function saveBooking(bookingData) {
-  const { bookingId, name, phone, vehicleNumber, email, service, vehicleType, price, date, timeSlot, notes } = bookingData;
+  const { bookingId, name, phone, email, service, vehicleType, price, date, timeSlot, notes } = bookingData;
 
-  // Wait if another save for this bookingId is in progress
   if (saveLocks.has(bookingId)) {
     await saveLocks.get(bookingId);
   }
@@ -72,68 +64,61 @@ async function saveBooking(bookingData) {
   saveLocks.set(bookingId, lock);
 
   try {
-  const rows = await getAllRows();
+    const rows = await getAllRows();
 
-  // Idempotency: if booking already saved, return it
-  const existingRow = rows.find(r => r[0] === bookingId);
-  if (existingRow) {
-    return {
-      id: existingRow[0], name: existingRow[1], phone: existingRow[2],
-      email: existingRow[3], service: existingRow[4], vehicleType: existingRow[5],
-      price: Number(existingRow[6]), date: existingRow[7], timeSlot: existingRow[8],
-      notes: existingRow[9] || '', status: existingRow[10], createdAt: existingRow[11]
-    };
-  }
-
-  // Race-condition guard: check slot availability
-  const slotTaken = rows.some(
-    r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
-  );
-  if (slotTaken) {
-    const err = new Error('This time slot was just booked by someone else. Your payment will be refunded.');
-    err.code = 'SLOT_TAKEN';
-    throw err;
-  }
-
-  const createdAt = new Date().toISOString();
-
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: SHEET_ID,
-    range: `${SHEET_RANGE}!A:L`,
-    valueInputOption: 'RAW',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: {
-      values: [[
-        bookingId, name, phone, email || '', service, vehicleType,
-        price, date, timeSlot, notes || '', 'confirmed', createdAt
-      ]]
+    // Idempotency: if booking already saved, return it
+    const existingRow = rows.find(r => r[0] === bookingId);
+    if (existingRow) {
+      return {
+        id: existingRow[0], name: existingRow[1], phone: existingRow[2],
+        email: existingRow[3], service: existingRow[4], vehicleType: existingRow[5],
+        price: Number(existingRow[6]), date: existingRow[7], timeSlot: existingRow[8],
+        notes: existingRow[9] || '', status: existingRow[10], createdAt: existingRow[11]
+      };
     }
-  });
 
-  const booking = {
-    id: bookingId, service, vehicleType, price, date, timeSlot,
-    name, phone, email: email || '', notes: notes || '', status: 'confirmed', createdAt
-  };
+    // Check slot availability
+    const slotTaken = rows.some(
+      r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
+    );
+    if (slotTaken) {
+      const err = new Error('This time slot was just booked by someone else.');
+      err.code = 'SLOT_TAKEN';
+      throw err;
+    }
 
-  sendWhatsAppNotifications(booking).catch(err => {
-    console.error('WhatsApp notification error:', err.message);
-  });
+    const createdAt = new Date().toISOString();
 
-  return booking;
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: `${SHEET_RANGE}!A:L`,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [[
+          bookingId, name, phone, email || '', service, vehicleType,
+          price, date, timeSlot, notes || '', 'confirmed', createdAt
+        ]]
+      }
+    });
+
+    const booking = {
+      id: bookingId, service, vehicleType, price, date, timeSlot,
+      name, phone, email: email || '', notes: notes || '', status: 'confirmed', createdAt
+    };
+
+    sendWhatsAppNotifications(booking).catch(err => {
+      console.error('WhatsApp notification error:', err.message);
+    });
+
+    return booking;
   } finally {
     saveLocks.delete(bookingId);
     resolve();
   }
 }
 
-// Expose Razorpay key ID to frontend (public key, safe to expose)
-app.get('/api/config', (req, res) => {
-  if (!RAZORPAY_KEY_ID) {
-    console.error('/api/config called but RAZORPAY_KEY_ID is not set');
-    return res.status(500).json({ error: 'Payment configuration missing on server' });
-  }
-  res.json({ razorpayKeyId: RAZORPAY_KEY_ID });
-});
+// ── API Routes ──
 
 // Get booked slots for a specific date
 app.get('/api/slots/:date', async (req, res) => {
@@ -149,219 +134,152 @@ app.get('/api/slots/:date', async (req, res) => {
   }
 });
 
-// Step 1: Create Razorpay order
-app.post('/api/create-order', async (req, res) => {
-  if (!razorpay) {
-    console.error('POST /api/create-order failed: Razorpay not initialized (missing keys)');
-    return res.status(500).json({ error: 'Payment service not configured on server' });
-  }
-
-  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
+// Send OTP via WhatsApp for booking verification
+app.post('/api/send-otp', async (req, res) => {
+  const { service, vehicleType, price, date, timeSlot, name, phone, email, notes } = req.body;
 
   if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
-    // Check if slot is already taken before creating order
+    // Check slot availability
     const rows = await getAllRows();
     const slotTaken = rows.some(
       r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
     );
-
     if (slotTaken) {
       return res.status(409).json({ error: 'This time slot is already booked' });
     }
 
-    // In test mode, charge ₹1 (100 paise) instead of full price
-    const amountInPaise = TEST_MODE ? 100 : price * 100;
+    // Check booking limit per phone number
+    const activeBookings = rows.filter(
+      r => r[2] === phone && (r[10] || 'confirmed') !== 'cancelled'
+    );
+    if (activeBookings.length >= MAX_ACTIVE_BOOKINGS_PER_PHONE) {
+      return res.status(429).json({ error: `Maximum ${MAX_ACTIVE_BOOKINGS_PER_PHONE} active bookings per phone number. Please cancel an existing booking or contact us.` });
+    }
 
-    const order = await razorpay.orders.create({
-      amount: amountInPaise,
-      currency: 'INR',
-      receipt: generateBookingId(),
-      notes: {
-        service,
-        vehicleType,
-        date,
-        timeSlot,
-        customerName: name,
-        customerPhone: phone,
-        customerEmail: email || '',
-        vehicleNumber: vehicleNumber || '',
-        actualPrice: String(price),
-        bookingNotes: notes || '',
-      }
+    // Rate limit: don't send another OTP if one was sent less than 30 seconds ago
+    const existing = otpStore.get(phone);
+    if (existing && existing.sentAt && (Date.now() - existing.sentAt) < 30000) {
+      return res.status(429).json({ error: 'OTP already sent. Please wait before requesting again.' });
+    }
+
+    const otp = generateOtp();
+    const bookingId = generateBookingId();
+
+    otpStore.set(phone, {
+      code: otp,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+      sentAt: Date.now(),
+      attempts: 0,
+      bookingData: { bookingId, service, vehicleType, price, date, timeSlot, name, phone, email, notes }
     });
 
-    res.json({
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      bookingId: order.receipt,
-    });
+    // Send OTP via WhatsApp
+    const sent = await sendWhatsAppOtp(phone, otp);
+
+    if (sent) {
+      res.json({ success: true, message: 'OTP sent to your WhatsApp' });
+    } else {
+      otpStore.delete(phone);
+      res.status(500).json({ error: 'Failed to send OTP. Please check your WhatsApp number.' });
+    }
   } catch (err) {
-    console.error('Error creating Razorpay order:', err.message);
-    res.status(500).json({ error: 'Failed to create payment order' });
+    console.error('Error in send-otp:', err.message);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
 
-// Step 2: Verify payment and save booking
-app.post('/api/verify-payment', async (req, res) => {
-  const {
-    razorpay_order_id,
-    razorpay_payment_id,
-    razorpay_signature,
-    bookingId,
-    service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes
-  } = req.body;
+// Verify OTP and confirm booking
+app.post('/api/verify-otp', async (req, res) => {
+  const { phone, otp } = req.body;
 
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-    return res.status(400).json({ error: 'Missing payment verification fields' });
+  if (!phone || !otp) {
+    return res.status(400).json({ error: 'Phone and OTP required' });
   }
 
-  // Verify signature
-  const expectedSignature = crypto
-    .createHmac('sha256', RAZORPAY_KEY_SECRET)
-    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-    .digest('hex');
+  const entry = otpStore.get(phone);
 
-  if (expectedSignature !== razorpay_signature) {
-    return res.status(400).json({ error: 'Payment verification failed' });
+  if (!entry) {
+    return res.status(400).json({ error: 'No OTP found. Please request a new one.' });
   }
 
-  // Payment verified — save booking
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(phone);
+    return res.status(400).json({ error: 'OTP expired. Please request a new one.' });
+  }
+
+  if (entry.attempts >= 3) {
+    otpStore.delete(phone);
+    return res.status(400).json({ error: 'Too many failed attempts. Please request a new OTP.' });
+  }
+
+  if (entry.code !== otp) {
+    entry.attempts++;
+    return res.status(400).json({ error: `Incorrect OTP. ${3 - entry.attempts} attempt(s) remaining.` });
+  }
+
+  // OTP verified — save booking
   try {
-    const booking = await saveBooking({
-      bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber: vehicleNumber || '', email: email || '', notes
-    });
+    const booking = await saveBooking(entry.bookingData);
+    otpStore.delete(phone);
     res.json({ success: true, booking });
   } catch (err) {
     if (err.code === 'SLOT_TAKEN') {
+      otpStore.delete(phone);
       return res.status(409).json({ error: err.message });
     }
-    console.error('Error saving booking:', err.message);
-    res.status(500).json({ error: 'Payment verified but failed to save booking. Please contact support.' });
+    console.error('Error saving booking after OTP:', err.message);
+    res.status(500).json({ error: 'Verification succeeded but failed to save booking. Please contact support.' });
   }
 });
 
-// Generate UPI QR code for desktop payment
-app.post('/api/create-upi-qr', async (req, res) => {
-  if (!razorpay) {
-    console.error('POST /api/create-upi-qr failed: Razorpay not initialized (missing keys)');
-    return res.status(500).json({ error: 'Payment service not configured on server' });
+// ── WhatsApp Functions ──
+
+// Send OTP message via WhatsApp (plain text, not a template)
+async function sendWhatsAppOtp(phone, otp) {
+  const token = process.env.META_WHATSAPP_TOKEN;
+  const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+
+  if (!token || !phoneNumberId) {
+    console.log('WhatsApp API credentials not configured. Cannot send OTP.');
+    return false;
   }
 
-  const { service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
-
-  if (!service || !vehicleType || !price || !date || !timeSlot || !name || !phone) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
+  const apiUrl = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
 
   try {
-    const rows = await getAllRows();
-    const slotTaken = rows.some(
-      r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
-    );
-    if (slotTaken) {
-      return res.status(409).json({ error: 'This time slot is already booked' });
-    }
-
-    const bookingId = generateBookingId();
-    const amountInPaise = TEST_MODE ? 100 : price * 100;
-    const closeBy = Math.floor(Date.now() / 1000) + 900; // 15 min expiry
-
-    const qr = await razorpay.qrCode.create({
-      type: 'upi_qr',
-      name: 'RoadRunners Detailing',
-      usage: 'single_use',
-      fixed_amount: true,
-      payment_amount: amountInPaise,
-      description: `Booking ${bookingId}: ${service}`,
-      close_by: closeBy,
-      notes: {
-        bookingId, service, vehicleType, date, timeSlot,
-        customerName: name, customerPhone: phone, customerEmail: email || '',
-        vehicleNumber: vehicleNumber || '',
-        actualPrice: String(price), bookingNotes: notes || ''
-      }
-    });
-
-    res.json({
-      qrCodeId: qr.id,
-      qrImageUrl: qr.image_url,
-      bookingId,
-      amount: amountInPaise,
-    });
-  } catch (err) {
-    console.error('Error creating UPI QR:', err.message);
-    res.status(500).json({ error: 'Failed to generate QR code' });
-  }
-});
-
-// Close an active QR code
-app.post('/api/close-qr', async (req, res) => {
-  try {
-    if (req.body.qrCodeId) {
-      await razorpay.qrCode.close(req.body.qrCodeId);
-    }
-    res.json({ success: true });
-  } catch (err) {
-    res.json({ success: true }); // Already closed or expired — fine
-  }
-});
-
-// Poll payment status (for UPI QR and collect flows)
-app.post('/api/payment-status', async (req, res) => {
-  const { orderId, qrCodeId, bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber, email, notes } = req.body;
-
-  try {
-    let paid = false;
-
-    if (qrCodeId) {
-      const qr = await razorpay.qrCode.fetch(qrCodeId);
-      if (qr.payments_amount_received > 0 && qr.payments_count_received > 0) {
-        // Verify actual payment entity exists and amount matches
-        try {
-          const payments = await razorpay.qrCode.fetchAllPayments(qrCodeId);
-          if (payments.items && payments.items.length > 0) {
-            const payment = payments.items[0];
-            const expectedAmount = TEST_MODE ? 100 : (Number(price) * 100);
-            if (payment.status === 'captured' && payment.amount >= expectedAmount) {
-              paid = true;
-            }
-          }
-        } catch (fetchErr) {
-          // If fetchAllPayments fails, fall back to basic check
-          console.error('QR payment fetch error, using basic check:', fetchErr.message);
-          paid = true;
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: phone,
+        type: 'text',
+        text: {
+          body: `Your RoadRunners booking verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`
         }
-      }
-    } else if (orderId) {
-      const order = await razorpay.orders.fetch(orderId);
-      if (order.status === 'paid') paid = true;
-    } else {
-      return res.status(400).json({ error: 'orderId or qrCodeId required' });
+      })
+    });
+    const data = await response.json();
+    if (data.error) {
+      console.error('WhatsApp OTP error:', data.error);
+      return false;
     }
-
-    if (paid) {
-      const booking = await saveBooking({
-        bookingId, service, vehicleType, price, date, timeSlot, name, phone, vehicleNumber: vehicleNumber || '', email: email || '', notes
-      });
-      return res.json({ status: 'paid', booking });
-    }
-
-    res.json({ status: 'pending' });
+    console.log('WhatsApp OTP sent to:', phone);
+    return true;
   } catch (err) {
-    if (err.code === 'SLOT_TAKEN') {
-      return res.status(409).json({ error: err.message });
-    }
-    console.error('Error checking payment status:', err.message);
-    res.status(500).json({ error: 'Failed to check payment status' });
+    console.error('WhatsApp OTP fetch error:', err.message);
+    return false;
   }
-});
+}
 
-// WhatsApp notification via Meta Cloud API
+// Send booking confirmation notifications
 async function sendWhatsAppNotifications(booking) {
   const token = process.env.META_WHATSAPP_TOKEN;
   const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
@@ -455,5 +373,4 @@ app.use(express.static(__dirname));
 
 app.listen(PORT, () => {
   console.log(`RoadRunners server running at http://localhost:${PORT}`);
-  if (TEST_MODE) console.log('⚠ TEST MODE: Razorpay orders will be created for ₹1 instead of actual price');
 });
