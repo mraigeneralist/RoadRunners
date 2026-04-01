@@ -238,7 +238,9 @@ app.post('/api/verify-otp', async (req, res) => {
 
 // ── WhatsApp Functions ──
 
-// Send OTP message via WhatsApp (plain text, not a template)
+// Send OTP via WhatsApp plain text message
+// TODO: Switch to Authentication template ('booking_otp') when using a live WhatsApp Business account.
+// Template code is backed up in commit history — see "Use WhatsApp auth template for OTP" commit.
 async function sendWhatsAppOtp(phone, otp) {
   const token = process.env.META_WHATSAPP_TOKEN;
   const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
