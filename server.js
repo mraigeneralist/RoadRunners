@@ -261,24 +261,27 @@ async function sendWhatsAppOtp(phone, otp) {
   const apiUrl = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
 
   try {
+    const payload = {
+      messaging_product: 'whatsapp',
+      to: phone,
+      type: 'text',
+      text: {
+        body: `Your RoadRunners booking verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`
+      }
+    };
+    console.log('Sending WhatsApp OTP to:', phone, 'via phoneNumberId:', phoneNumberId);
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'text',
-        text: {
-          body: `Your RoadRunners booking verification code is: *${otp}*\n\nThis code expires in 5 minutes. Do not share it with anyone.`
-        }
-      })
+      body: JSON.stringify(payload)
     });
     const data = await response.json();
+    console.log('WhatsApp OTP API response:', JSON.stringify(data));
     if (data.error) {
-      console.error('WhatsApp OTP error:', data.error);
+      console.error('WhatsApp OTP error:', JSON.stringify(data.error));
       return false;
     }
     console.log('WhatsApp OTP sent to:', phone);
