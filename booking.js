@@ -298,7 +298,7 @@
         let cls = 'cal-cell';
         if (isDisabled) cls += ' disabled';
         if (isSelected) cls += ' selected';
-        if (isToday && !isSelected) cls += ' today';
+        if (isToday && !isSelected && !isDisabled) cls += ' today';
         html += `<div class="${cls}" data-date="${dateStr}">${d}</div>`;
       }
 
