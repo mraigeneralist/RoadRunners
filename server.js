@@ -19,7 +19,7 @@ const auth = new google.auth.GoogleAuth({
 
 const sheets = google.sheets({ version: 'v4', auth });
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const SHEET_RANGE = 'Sheet1';
+const SHEET_RANGE = 'Bookings';
 
 const MAX_ACTIVE_BOOKINGS_PER_PHONE = 2;
 
@@ -34,16 +34,17 @@ function generateOtp() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
-function generateBookingId() {
-  const year = new Date().getFullYear();
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `RR-${year}-${rand}`;
+async function generateBookingId(date) {
+  const dateCompact = date.replace(/-/g, '');
+  const rows = await getAllRows();
+  const count = rows.filter(r => r[7] === date).length + 1;
+  return `RR-${dateCompact}-${String(count).padStart(4, '0')}`;
 }
 
 async function getAllRows() {
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: `${SHEET_RANGE}!A2:L`,
+    range: `${SHEET_RANGE}!A2:M`,
   });
   return res.data.values || [];
 }
@@ -73,13 +74,13 @@ async function saveBooking(bookingData) {
         id: existingRow[0], name: existingRow[1], phone: existingRow[2],
         email: existingRow[3], service: existingRow[4], vehicleType: existingRow[5],
         price: Number(existingRow[6]), date: existingRow[7], timeSlot: existingRow[8],
-        notes: existingRow[9] || '', status: existingRow[10], createdAt: existingRow[11]
+        notes: existingRow[9] || '', status: existingRow[10], source: existingRow[11], createdAt: existingRow[12]
       };
     }
 
     // Check slot availability
     const slotTaken = rows.some(
-      r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
+      r => r[7] === date && r[8] === timeSlot && (r[10] || 'CONFIRMED') !== 'CANCELLED'
     );
     if (slotTaken) {
       const err = new Error('This time slot was just booked by someone else.');
@@ -91,20 +92,20 @@ async function saveBooking(bookingData) {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SHEET_ID,
-      range: `${SHEET_RANGE}!A:L`,
+      range: `${SHEET_RANGE}!A:M`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {
         values: [[
           bookingId, name, phone, email || '', service, vehicleType,
-          price, date, timeSlot, notes || '', 'confirmed', createdAt
+          price, date, timeSlot, notes || '', 'CONFIRMED', 'WEBSITE', createdAt
         ]]
       }
     });
 
     const booking = {
       id: bookingId, service, vehicleType, price, date, timeSlot,
-      name, phone, email: email || '', notes: notes || '', status: 'confirmed', createdAt
+      name, phone, email: email || '', notes: notes || '', status: 'CONFIRMED', source: 'WEBSITE', createdAt
     };
 
     sendWhatsAppNotifications(booking).catch(err => {
@@ -125,7 +126,7 @@ app.get('/api/slots/:date', async (req, res) => {
   try {
     const rows = await getAllRows();
     const bookedSlots = rows
-      .filter(r => r[7] === req.params.date && (r[10] || 'confirmed') !== 'cancelled')
+      .filter(r => r[7] === req.params.date && (r[10] || 'CONFIRMED') !== 'CANCELLED')
       .map(r => r[8]);
     res.json({ bookedSlots });
   } catch (err) {
@@ -153,7 +154,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 
     const slotTaken = rows.some(
-      r => r[7] === date && r[8] === timeSlot && (r[10] || 'confirmed') !== 'cancelled'
+      r => r[7] === date && r[8] === timeSlot && (r[10] || 'CONFIRMED') !== 'CANCELLED'
     );
     if (slotTaken) {
       return res.status(409).json({ error: 'This time slot is already booked' });
@@ -161,7 +162,7 @@ app.post('/api/send-otp', async (req, res) => {
 
     // Check booking limit per phone number
     const activeBookings = rows.filter(
-      r => r[2] === phone && (r[10] || 'confirmed') !== 'cancelled'
+      r => r[2] === phone && (r[10] || 'CONFIRMED') !== 'CANCELLED'
     );
     if (activeBookings.length >= MAX_ACTIVE_BOOKINGS_PER_PHONE) {
       return res.status(429).json({ error: `Maximum ${MAX_ACTIVE_BOOKINGS_PER_PHONE} active bookings per phone number. Please cancel an existing booking or contact us.` });
@@ -174,7 +175,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 
     const otp = generateOtp();
-    const bookingId = generateBookingId();
+    const bookingId = await generateBookingId(date);
     console.log(`Generated OTP for ${phone}: bookingId=${bookingId}`);
 
     otpStore.set(phone, {
@@ -354,7 +355,8 @@ async function sendWhatsAppNotifications(booking) {
       `🚗  ${booking.vehicleType}`,
       `💰  ₹${booking.price}`,
       `📅  ${booking.date}`,
-      `🕐  ${booking.timeSlot}`
+      `🕐  ${booking.timeSlot}`,
+      `📱  Source: Website`
     ].join('\n');
 
     try {

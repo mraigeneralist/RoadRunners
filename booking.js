@@ -31,10 +31,18 @@
   ];
 
   const TIME_SLOTS = [
-    '9:30 AM', '10:30 AM', '11:30 AM', '12:30 PM',
-    '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
-    '6:00 PM', '7:00 PM', '7:30 PM'
+    '09:30', '10:30', '11:30', '12:30',
+    '14:00', '15:00', '16:00', '17:00',
+    '18:00', '19:00', '19:30'
   ];
+
+  // Convert 24-hour "HH:MM" to display "h:MM AM/PM"
+  function formatTime(slot) {
+    const [h, m] = slot.split(':').map(Number);
+    const suffix = h < 12 ? 'AM' : 'PM';
+    const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${display}:${String(m).padStart(2, '0')} ${suffix}`;
+  }
 
   let state = {
     step: 1,
@@ -353,10 +361,7 @@
 
   // Convert slot string like "9:30 AM" or "12:30 PM" to 24h minutes
   function slotToMinutes(slot) {
-    const [time, period] = slot.split(' ');
-    let [h, m] = time.split(':').map(Number);
-    if (period === 'PM' && h !== 12) h += 12;
-    if (period === 'AM' && h === 12) h = 0;
+    const [h, m] = slot.split(':').map(Number);
     return h * 60 + m;
   }
 
@@ -395,7 +400,7 @@
       const isSel = state.timeSlot === slot && !isUnavailable;
       const cls = isUnavailable ? 'booked' : isSel ? 'selected' : '';
       const label = isBooked ? ' (Booked)' : '';
-      html += `<div class="time-slot ${cls}" data-slot="${slot}">${slot}${label}</div>`;
+      html += `<div class="time-slot ${cls}" data-slot="${slot}">${formatTime(slot)}${label}</div>`;
     });
     grid.innerHTML = html;
 
@@ -520,7 +525,7 @@
           </div>
           <div class="review-row">
             <span class="review-label">Date & Time</span>
-            <span class="review-value">${formattedDate}, ${state.timeSlot}</span>
+            <span class="review-value">${formattedDate}, ${formatTime(state.timeSlot)}</span>
           </div>
           <div class="review-row">
             <span class="review-label">Customer</span>
@@ -810,7 +815,7 @@
           </div>
           <div class="review-row">
             <span class="review-label">Time</span>
-            <span class="review-value">${b.timeSlot}</span>
+            <span class="review-value">${formatTime(b.timeSlot)}</span>
           </div>
           <div class="review-row">
             <span class="review-label">Amount</span>
