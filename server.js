@@ -160,12 +160,15 @@ app.post('/api/send-otp', async (req, res) => {
       return res.status(409).json({ error: 'This time slot is already booked' });
     }
 
-    // Check booking limit per phone number
-    const activeBookings = rows.filter(
-      r => r[2] === phone && (r[10] || 'CONFIRMED') !== 'CANCELLED'
+    // Check booking limit per phone number per day (max 2 slots per day)
+    const sameDayBookings = rows.filter(
+      r => r[2] === phone && r[7] === date && (r[10] || 'CONFIRMED') !== 'CANCELLED'
     );
-    if (activeBookings.length >= MAX_ACTIVE_BOOKINGS_PER_PHONE) {
-      return res.status(429).json({ error: `Maximum ${MAX_ACTIVE_BOOKINGS_PER_PHONE} active bookings per phone number. Please cancel an existing booking or contact us.` });
+    if (sameDayBookings.length >= MAX_ACTIVE_BOOKINGS_PER_PHONE) {
+      const slotDetails = sameDayBookings.map(r => `• ${r[4]} at ${r[8]}`).join('\n');
+      return res.status(429).json({
+        error: `You've already booked 2 slots for this date:\n${slotDetails}\n\nFor a 3rd slot, please contact Dinesh directly on WhatsApp: +91 7200039437`
+      });
     }
 
     // Rate limit: don't send another OTP if one was sent less than 30 seconds ago
