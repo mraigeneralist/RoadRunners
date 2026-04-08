@@ -166,9 +166,16 @@ app.post('/api/send-otp', async (req, res) => {
     );
     if (sameDayBookings.length >= MAX_ACTIVE_BOOKINGS_PER_PHONE) {
       const slotDetails = sameDayBookings.map(r => `• ${r[4]} at ${r[8]}`).join('\n');
-      return res.status(429).json({
-        error: `You've already booked 2 slots for this date:\n${slotDetails}\n\nFor a 3rd slot, please contact Dinesh directly on WhatsApp: +91 7200039437`
-      });
+      const errorMsg = `You've already booked 2 slots for this date:\n${slotDetails}\n\nFor a 3rd slot, please contact Dinesh directly on WhatsApp: +91 7200039437`;
+
+      // Also send this as a WhatsApp message to the customer
+      sendWhatsAppText(phone,
+        `⚠️ *Booking Limit Reached — RoadRunners Detailing*\n\n` +
+        `You've already booked 2 slots for ${date}:\n${slotDetails}\n\n` +
+        `To book a 3rd slot, please contact Dinesh directly:\n📞 wa.me/917200039437`
+      ).catch(err => console.error('Limit notification error:', err.message));
+
+      return res.status(429).json({ error: errorMsg });
     }
 
     // Rate limit: don't send another OTP if one was sent less than 30 seconds ago
@@ -249,6 +256,22 @@ app.post('/api/verify-otp', async (req, res) => {
 });
 
 // ── WhatsApp Functions ──
+
+// Generic helper: send a plain text WhatsApp message
+async function sendWhatsAppText(to, body) {
+  const token = process.env.META_WHATSAPP_TOKEN;
+  const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+  if (!token || !phoneNumberId) return;
+
+  const res = await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } })
+  });
+  const data = await res.json();
+  if (data.error) console.error(`WhatsApp text error to ${to}:`, JSON.stringify(data.error));
+  else console.log(`WhatsApp text sent to: ${to}`);
+}
 
 // Send OTP via WhatsApp plain text message
 // TODO: Switch to Authentication template ('booking_otp') when using a live WhatsApp Business account.
@@ -346,6 +369,7 @@ async function sendWhatsAppNotifications(booking) {
   }
 
   // Owner notification — plain text
+  console.log('Owner notification: ownerNumber=', ownerNumber || '(not set)');
   if (ownerNumber) {
     const ownerBody = [
       `✅ *New Booking — RoadRunners Detailing*`,
